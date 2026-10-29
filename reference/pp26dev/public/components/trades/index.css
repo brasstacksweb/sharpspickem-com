@@ -1,0 +1,42 @@
+/* <pp-trades> — styles nested from the .trades root class. */
+.trades {
+  display: block;
+
+  /* The header carries a control and, once the season closes, a whole sentence of gate —
+     `.panel > header` is a nowrap flex, which would crush the heading beside it. Wrapping
+     lets the gate take a second line and costs nothing in every other state, where the
+     header is a heading, a button, an ⓘ and a link. */
+  & .panel > header { flex-wrap: wrap; }
+
+  & .submit { margin-top: 12px; }
+  & .amt { font-family: var(--mono); color: var(--brass); }
+  & .hint { margin: 6px 0 0; font-size: 0.85rem; }
+
+  & .cash-row {
+    display: flex;
+    gap: 8px;
+
+    & input { flex: 1 1 auto; min-width: 0; }
+    & select { flex: 0 0 auto; width: auto; }
+  }
+
+  /* The reasons behind the disabled and deferred options, restated under the select
+     because an <option> cannot carry the §9 link. */
+  & .gates {
+    margin: 6px 0 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    & .gate-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 12.5px;
+    }
+    & b { color: var(--chalk); }
+  }
+}
+
+.trades .terms { margin-top: 4px; font-style: italic; }

@@ -1,0 +1,8 @@
+/* <pp-login> — the sign-in card. The visual .login-* classes are shared across
+ * the auth pages and live in style.css; this root is just a block container. */
+.login {
+  display: block;
+
+  /* League-picker buttons stack tighter than the card's primary action. */
+  & [data-buttons] button { margin-top: 8px; }
+}

@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<!--
+  /rules/ — the Official Rulebook, served as a static page for public review. Public on
+  purpose: owners and prospective owners read the rules without signing in. Static HTML —
+  no database, no session — so this page can never leak league state.
+
+  SOURCE OF TRUTH — the only one. When a rule changes, change it HERE first, then the code.
+
+  ADOPTED AS v1.0 on 22 August 2026, when the first real league's preseason draft began.
+  §16's amendment procedure now applies: a competitive rule may not be changed mid-season,
+  and every change from here is recorded in §16's version history.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Official Rulebook — Sharps Pick 'Em</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Graduate&amp;family=Barlow:wght@400;600;700&amp;family=IBM+Plex+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .spec-wrap { max-width: 820px; margin: 0 auto; padding: 32px 22px 96px; }
+  .spec-head { border-bottom: 3px solid var(--brass); padding-bottom: 20px; margin-bottom: 8px; }
+  .spec-head h1 { font-family: var(--display); font-size: 34px; letter-spacing: 1px; margin: 0 0 6px; }
+  .spec-head .sub { color: var(--chalk-dim); font-size: 15px; }
+  .spec-wrap h2 {
+    font-family: var(--display); font-size: 23px; letter-spacing: .5px;
+    color: var(--brass); margin: 52px 0 4px; padding-top: 20px;
+    border-top: 1px solid var(--stripe);
+  }
+  .spec-wrap h2:first-of-type { border-top: 0; }
+  .spec-wrap h3 { font-size: 17px; margin: 28px 0 6px; color: var(--chalk); }
+  .spec-wrap h4 { font-size: 15px; margin: 20px 0 4px; color: var(--chalk-dim); text-transform: uppercase; letter-spacing: .6px; }
+  .spec-wrap p, .spec-wrap li { color: var(--chalk); }
+  .spec-wrap ul, .spec-wrap ol { padding-left: 22px; }
+  .spec-wrap li { margin: 3px 0; }
+  .spec-wrap table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  .spec-wrap th, .spec-wrap td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--stripe); }
+  .spec-wrap th { color: var(--chalk-dim); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; }
+  .spec-wrap td.money, .spec-wrap th.money { font-family: var(--mono); text-align: right; }
+  .toc { background: var(--field-2); border: 1px solid var(--stripe); border-radius: 6px; padding: 18px 22px; margin: 28px 0; }
+  .toc h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--chalk-dim); }
+  .toc ol { margin: 0; columns: 2; column-gap: 32px; }
+  .toc a { text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--field-2); border-left: 3px solid var(--brass);
+    padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;
+  }
+  .callout p { margin: 4px 0; font-size: 14px; }
+  .callout .tag {
+    display: inline-block; font-size: 11px; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--brass); font-weight: 700; margin-bottom: 2px;
+  }
+  .example { background: var(--field-2); border: 1px solid var(--stripe); border-radius: 6px; padding: 14px 18px; margin: 16px 0; }
+  .example h4 { margin-top: 0; color: var(--brass); }
+  @media (max-width: 620px) { .toc ol { columns: 1; } }
+
+  /* THE BAR STICKS, because this page is usually arrived at by citation. A tooltip
+     on the dashboard links to rules/#s11 and drops you two thousand words in; with
+     the only way out at the very top, the way back is a scroll to somewhere you have
+     never been. Sticking the bar puts it on screen at every depth. Plain anchors —
+     this page deliberately has no JavaScript, which is also why there is no
+     scroll-triggered "back to top" widget: a fixed button cannot know whether it is
+     needed without JS, and a permanent one is clutter. "Contents" is the same
+     journey with a destination attached. */
+  .topbar { position: sticky; top: 0; }
+  .rules-nav { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
+  .rules-nav a { text-decoration: none; white-space: nowrap; }
+  .rules-nav a:hover, .rules-nav a:focus-visible { text-decoration: underline; }
+
+  /* A sticky bar covers whatever an anchor scrolls to, so every jump target clears
+     its own height — otherwise §11 lands *behind* the bar and reads as §10. */
+  .spec-wrap h2, .toc { scroll-margin-top: 74px; }
+
+  /* Arriving from a citation, say which section answered it: the heading you were
+     sent to washes brass and settles. It is the only feedback a deep link gets. */
+  .spec-wrap h2:target { animation: land 1.8s ease-out; }
+  @keyframes land {
+    from { background: rgba(217,165,63,.22); box-shadow: -12px 0 0 rgba(217,165,63,.22); }
+    to   { background: transparent; box-shadow: -12px 0 0 transparent; }
+  }
+
+  /* Narrow: the way out matters, the label does not. Keeping "Official Rulebook"
+     wraps the bar onto a second line and a two-line sticky bar eats a phone. */
+  @media (max-width: 620px) {
+    .topbar { padding: 10px 14px; gap: 12px; }
+    .topbar .who { display: none; }
+    .wordmark { font-size: 17px; }
+    .rules-nav { gap: 14px; font-size: 13px; }
+    .spec-wrap h2, .toc { scroll-margin-top: 60px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spec-wrap h2:target { animation: none; border-left: 3px solid var(--brass); padding-left: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="wordmark">SHARPS <span>PICK 'EM</span></span>
+  <span class="who">Official Rulebook</span>
+  <nav class="rules-nav" aria-label="Rulebook">
+    <a href="#toc">Contents</a>
+    <a href="../home">&larr; The league</a>
+  </nav>
+</div>
+
+<div class="spec-wrap">
+
+  <div class="spec-head">
+    <h1>Official Rulebook</h1>
+    <div class="sub">Version 1.1 &mdash; adopted 22 August 2026, amended 15 October 2026 · &copy; 2026 Spencer Plassman</div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">v1.1</span>
+    <p>This page is the single source of truth for the rules, and it is now
+    <strong>adopted</strong> &mdash; the first league's preseason draft began on
+    22 August 2026, which is the moment section 16 names. The competitive rules are
+    fixed for this season; changes from here follow the
+    <a href="#s16">amendment procedure in section 16</a> and are recorded there.</p>
+  </div>
+
+  <div class="callout">
+    <span class="tag">The app never handles real money</span>
+    <p>Available Funds, the House Account and the Prize Pool are <strong>records</strong>,
+    not accounts. Real money is collected and paid out by the Commissioner directly. See
+    <a href="#s3">&sect;3</a> for how money enters the league, and how it is paid back
+    out in a single settlement after the National Championship.</p>
+  </div>
+
+  <div class="toc" id="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#s1">Introduction</a></li>
+      <li><a href="#s2">Core Concepts</a></li>
+      <li><a href="#s3">The League Economy</a></li>
+      <li><a href="#s4">League Structure</a></li>
+      <li><a href="#s5">The Draft</a></li>
+      <li><a href="#s6">The Market</a></li>
+      <li><a href="#s7">Buying Teams from the House</a></li>
+      <li><a href="#s8">Selling Teams to the House</a></li>
+      <li><a href="#s9">Owner-to-Owner Trades</a></li>
+      <li><a href="#s10">House Account</a></li>
+      <li><a href="#s11">Battles</a></li>
+      <li><a href="#s12">College Football Playoff</a></li>
+      <li><a href="#s13">League Commissioner</a></li>
+      <li><a href="#s14">Examples of Play</a></li>
+      <li><a href="#s15">Definitions</a></li>
+      <li><a href="#s16">Amendments &amp; Version History</a></li>
+    </ol>
+  </div>
+
+  <h2 id="s1">1. Introduction</h2>
+  <p>Sharps Pick 'Em is a college football ownership and investment game.
+  Unlike fantasy football, owners do not draft individual players. Instead, they
+  build and manage portfolios of college football teams whose values rise and
+  fall throughout the season.</p>
+  <p>Owners attempt to identify undervalued teams, make strategic trades, and
+  position themselves to own College Football Playoff teams when the postseason
+  begins.</p>
+  <p>The game's economy is built around objective Market Values, blind bidding,
+  and free-market trading between owners. Every decision carries financial
+  consequences, rewarding owners who correctly identify championship contenders
+  before the rest of the league.</p>
+  <p>The ultimate goal is to maximize portfolio value while earning playoff
+  payouts as your teams advance through the College Football Playoff.</p>
+
+  <h2 id="s2">2. Core Concepts</h2>
+  <p>Before playing, every owner should understand five core concepts that form
+  the foundation of Sharps Pick 'Em.</p>
+
+  <h3>Owners</h3>
+  <p>Each participant is an Owner. Owners buy, sell, trade, and manage teams
+  throughout the season. Each owner may own a maximum of the league's configured <strong>portfolio limit</strong>
+  (default: five teams), as established by the Commissioner before the draft. The limit may be set anywhere from
+  <strong>four to eight</strong>, and it is locked once the draft begins.</p>
+
+  <h3>The House</h3>
+  <p>The House is not a competitor. Instead, the House functions as an automated
+  market maker. The House:</p>
+  <ul>
+    <li>Owns every unowned team.</li>
+    <li>Releases ranked teams by blind auction, at a minimum of Market Value (&sect;7).</li>
+    <li>Gives unranked teams away for free (&sect;5).</li>
+    <li>Buys teams back from owners at Market Value, on the narrowing terms of
+    &sect;8 &mdash; Top 25, then only 1&ndash;12, then nothing.</li>
+    <li>Holds all league funds in the House Account.</li>
+    <li>Pays playoff winnings at the end of the season.</li>
+  </ul>
+  <p>The House never negotiates prices and never competes with owners.</p>
+
+  <h3>Market Value</h3>
+  <p>Market Value is the official valuation assigned to every FBS team. It serves
+  as the benchmark for the league economy and is updated once each week using
+  objective rankings.</p>
+  <p>Market Value is <strong>not</strong> intended to predict championship odds.
+  Instead, it creates a consistent pricing system that allows owners to compare
+  teams, evaluate trades, and determine fair prices. Market Value is used to:</p>
+  <ul>
+    <li>Determine draft prices.</li>
+    <li>Determine the minimum acceptable bid for House-owned teams.</li>
+    <li>Determine what the House will pay when purchasing a team.</li>
+    <li>Serve as the baseline for owner-to-owner negotiations.</li>
+  </ul>
+  <p>Owners are always free to buy or sell teams above or below Market Value when
+  trading directly with another owner.</p>
+
+  <h3>House Account</h3>
+  <p>Money reaches the House Account when owners <strong>spend</strong> it, not when
+  they pay it in. A Contribution is credited to that owner's Available Funds
+  (&sect;3); it enters the House only when it is used. Money enters the House Account
+  through:</p>
+  <ul>
+    <li>Draft purchases</li>
+    <li>Blind bids</li>
+    <li>Battle entry fees</li>
+    <li>Any additional league fees approved before the season</li>
+  </ul>
+  <p>At the conclusion of the College Football Playoff, the entire House Account
+  is distributed according to the playoff payout schedule. No money carries over
+  into future seasons.</p>
+
+  <h3>The Market</h3>
+  <p>For as long as the season is running the market is open continuously (&sect;6 closes
+  it at the Championship Game). Owners may buy ranked teams from the House, add unranked
+  teams for free, drop teams, sell teams to the House (until &sect;8's buyback dates close
+  that side), and agree owner-to-owner trades. What decides whether you can
+  act on a given team is whether that team is <strong>available</strong> &mdash;
+  broadly, whether its published Market Value can still be trusted. An action on an
+  available team happens immediately; an action on an unavailable one is queued and
+  settles at the next market opening (&sect;6).
+
+  <h3>How Gameplay Works</h3>
+  <p>At its core, Sharps Pick 'Em is a game about building and managing a portfolio
+  of college football teams. Each owner may own a maximum of the league's configured <strong>portfolio limit</strong>
+  (default: five teams), as established by the Commissioner before the draft. Throughout the season, owners buy, sell,
+  and trade teams in an effort to maximize the value of their portfolio and win the
+  league prize pool.</p>
+  <p>Most owners will naturally divide their portfolio into two strategies:</p>
+
+  <h4>Long-Term Holdings</h4>
+  <p>These are your &ldquo;blue-chip&rdquo; teams &mdash; programs you believe will
+  appreciate in value over the course of the season by winning games, climbing the
+  rankings, and making a College Football Playoff run.</p>
+
+  <h4>Battle Teams</h4>
+  <p>The remaining roster spots can be used more aggressively. Owners can
+  temporarily acquire teams with favorable weekly matchups in order to create
+  profitable betting opportunities called <a href="#s11">Battles</a>.</p>
+
+  <h3>The Strategy</h3>
+  <p>Success requires balancing long-term investing with short-term trading:</p>
+  <ul>
+    <li>Hold elite teams that you expect to appreciate throughout the season.</li>
+    <li>Use open roster spots to capitalize on weekly matchups.</li>
+    <li>Predict which teams will cover the spread.</li>
+    <li>Decide when to hold, trade, or rotate teams.</li>
+    <li>Negotiate larger Battle wagers with other owners when the opportunity arises.</li>
+  </ul>
+  <p>Every roster decision becomes a tradeoff between building long-term portfolio
+  value and generating short-term gains through Battles, creating an active market
+  that rewards both football knowledge and strategic portfolio management.</p>
+
+  <h2 id="s3">3. The League Economy</h2>
+  <p>The economy of Sharps Pick 'Em is intentionally simple, objective, and
+  transparent. Every team has an official Market Value published by the House.
+  This value changes weekly according to nationally recognized rankings and
+  serves as the foundation for every financial transaction within the league.</p>
+  <p>Unlike traditional fantasy sports, owners are investing in programs rather
+  than accumulating player statistics. Success comes from recognizing value
+  before the market does.</p>
+
+  <div class="callout">
+    <span class="tag">Sharps Pick 'Em never holds money</span>
+    <p>Every figure in this app &mdash; Available Funds, the House Account, the Prize
+    Pool &mdash; is a <strong>record</strong>, not an account. Real money is collected
+    and paid out by the Commissioner directly, outside the app. Available Funds are not
+    a bank account, a stored-value balance, or a wallet you can withdraw from: they are
+    the league's shared note of what you may spend and what you are owed.</p>
+  </div>
+
+  <h3>Available Funds</h3>
+  <p>Each owner has an <strong>Available Funds</strong> balance: what they may spend in
+  the league right now. It goes down when you buy a team at the draft, win a blind bid,
+  pay cash in a trade, or stake a Battle. It goes up when you sell a team to the House
+  (while &sect;8 still allows it), receive trade cash, win a Battle, or win a
+  playoff payout.</p>
+
+  <h3>Contributions</h3>
+  <p>Money enters the league as a <strong>Contribution</strong>: you send it to the
+  Commissioner directly, and your Available Funds go up once they confirm it has
+  arrived. Nothing is credited before then &mdash; the app cannot see your bank.</p>
+  <ul>
+    <li>The <strong>buy-in</strong> is paid once, <strong>before the draft</strong>.
+    Everyone starts the season on the same footing.</li>
+    <li><strong>Top-ups</strong> may be requested at any point during the season, if the
+    Commissioner has enabled them.</li>
+  </ul>
+
+  <h3>One Settlement, at the End of the Season</h3>
+  <div class="callout">
+    <span class="tag">Nobody gets paid until it is over</span>
+    <p>Winnings are <strong>not</strong> handed over as you earn them. Battle winnings
+    and playoff payouts are credited to your Available Funds and stay there. After the
+    National Championship &mdash; once the House has paid out the whole Prize Pool and
+    holds $0.00 &mdash; the Commissioner settles up <strong>once</strong>, paying each
+    owner their <strong>final Available Funds balance</strong>.</p>
+    <p>So the number to watch all season is your balance: it already contains everything
+    you have won and everything you have spent. If it ends below what you put in, you
+    are down on the season; the difference has gone to the owners who did better.</p>
+  </div>
+  <p>An owner whose final balance is negative owes the league that amount, and settles
+  it with the Commissioner the same way.</p>
+
+  <h3>Opening Market Values</h3>
+  <p>Before the season begins, only the AP Top 25 receives an Opening Market
+  Value.</p>
+  <table>
+    <thead><tr><th>AP Rank</th><th class="money">Market Value</th></tr></thead>
+    <tbody>
+      <tr><td>#1</td><td class="money">$26</td></tr>
+      <tr><td>#2</td><td class="money">$25</td></tr>
+      <tr><td>#3</td><td class="money">$24</td></tr>
+      <tr><td>…</td><td class="money">…</td></tr>
+      <tr><td>#24</td><td class="money">$3</td></tr>
+      <tr><td>#25</td><td class="money">$2</td></tr>
+    </tbody>
+  </table>
+  <p>The total value of the AP Top 25 equals <strong>$350</strong>. This creates
+  the opening league economy. If every ranked team is drafted, exactly $350 is
+  deposited into the House Account before Week 1.</p>
+
+  <h3>Unranked Teams During the Draft</h3>
+  <p>Every FBS team outside the preseason AP Top 25 is <strong>free to
+  draft</strong>. This allows owners to take calculated risks on sleeper teams
+  without spending part of the opening economy. Owners who correctly identify
+  breakout teams are rewarded as those teams gain Market Value throughout the
+  season.</p>
+
+  <h3>Weekly Market Values</h3>
+  <p>Beginning after the completion of the draft, the House publishes updated
+  Market Values every week. The following pricing structure is used.</p>
+  <table>
+    <thead><tr><th>Team Status</th><th class="money">Market Value</th></tr></thead>
+    <tbody>
+      <tr><td>CFP/AP #1</td><td class="money">$26</td></tr>
+      <tr><td>CFP/AP #2</td><td class="money">$25</td></tr>
+      <tr><td>…</td><td class="money">…</td></tr>
+      <tr><td>CFP/AP #25</td><td class="money">$2</td></tr>
+      <tr><td>Any team outside both Top 25s</td><td class="money">$0</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Only ranked teams have a Market Value.</strong> A team outside both the AP
+  and CFP Top 25 is worth $0.00 &mdash; it is free to draft, free to add, free to drop,
+  is never bid on, and is never bought back by the House (&sect;5, &sect;8). Market Value
+  is the price a ranked team carries, and the House does not price unranked teams at all.
+  The moment a team enters either Top 25 it takes the Market Value for its rank.</p>
+  <p><strong>Market Value is the price, not a promise that the House is buying.</strong>
+  What the House will actually pay narrows twice and then stops altogether, on two dates the
+  Commissioner sets before the draft (&sect;8) &mdash; so from the first of those dates a
+  team can carry its full Market Value and still be one the House will not take. The price
+  is what the poll says; whether there is a buyer is &sect;8's question, and after the second
+  date there is none.</p>
+  <p>Prior to the release of the first CFP Rankings, the AP Poll is used. Once
+  CFP Rankings are released, all Market Values are determined using the CFP
+  Rankings for the remainder of the season. Market Values are republished each time a
+  new poll is applied, which is also what opens the market (&sect;6).</p>
+
+  <h2 id="s4">4. League Structure</h2>
+
+  <h3>League Size</h3>
+  <p>A Sharps Pick 'Em league is <strong>designed for 8 to 12 owners</strong>, but that is
+  a recommendation and not a requirement &mdash; a league may be any size. Each owner
+  manages an investment portfolio of college football teams throughout the season. The
+  Commissioner is responsible for organizing the league and distributing playoff winnings
+  according to these rules.</p>
+  <p>What the size does change is the <strong>buy-in</strong>. The draft board is the same
+  25 ranked teams however many owners there are, so a smaller league has each owner buying
+  a larger share of it: the minimum workable buy-in is <strong>$107.50</strong> at four
+  owners against <strong>$60.00</strong> at ten. That runs opposite to most people's
+  instinct, so the app computes the floor for your league and shows it beside the buy-in
+  setting (&sect;3).</p>
+  <p><strong>Those two figures assume the default five-team portfolio limit.</strong> The
+  floor covers a share of the draft board plus the &sect;11 stake reserve, and the reserve
+  is one stake per team held &mdash; so a league that sets a different limit (&sect;4,
+  <em>Team Ownership</em>) has a different floor. The app recalculates it automatically;
+  it is never a number anyone has to work out.</p>
+
+  <h3>Team Ownership</h3>
+  <p>Each owner may own a maximum of the league's configured <strong>portfolio limit</strong>
+  (default: five teams), as established by the Commissioner before the draft. An owner is never required to fill their
+  portfolio. Any team not currently owned by an owner is automatically owned by the
+  House. There is no limit to the number of teams the House may own.</p>
+  <p>The Commissioner may set the limit anywhere from <strong>four to eight</strong>
+  teams before the draft; from the first pick it is locked for the season, like every
+  other rule that affects competitive balance (&sect;16). The examples throughout this
+  section assume the default of five.</p>
+
+  <h3>Ownership Rights</h3>
+  <p>Owning a team grants the owner exclusive rights to:</p>
+  <ul>
+    <li>Sell the team to another owner.</li>
+    <li>Sell the team back to the House.</li>
+    <li>Receive any playoff payouts earned by that team.</li>
+    <li>Enter the team into Battles, when applicable.</li>
+  </ul>
+  <p>Only the current owner of a team may authorize a trade or sale.</p>
+
+  <h3>League Standings</h3>
+  <p>The standings answer two questions, and they are deliberately different questions.</p>
+  <p><strong>Alpha</strong> is an owner's Portfolio Value minus everything that has been put
+  into their account &mdash; every Contribution they have made (&sect;3), and any balance
+  adjustment the Commissioner has recorded for them (&sect;13). It removes the effect of
+  simply putting more money in during the season, so
+  it measures who has <em>played</em> best rather than who has paid in most.
+  <strong>Alpha determines the league standings and the league champion.</strong></p>
+  <p><strong>Portfolio Value</strong> is what an owner is worth: their Available Funds
+  (&sect;3) plus <strong>what the House would pay for every team they hold</strong>
+  (&sect;8). It is the headline figure an owner watches all season, and it is shown beside
+  every standing &mdash; but because it counts money paid in as well as money made, it does
+  not decide the league. An owner cannot climb the table by contributing more.</p>
+  <p><strong>A team is worth what somebody will give you for it.</strong> Market Value is
+  the <em>price</em> a team carries &mdash; what it costs to draft, to bid on, or to buy
+  from the House (&sect;2) &mdash; but the House does not go on honouring that price all
+  year. Its buying narrows twice and then stops, on the two dates in &sect;8 &mdash; so from
+  the first of them a team ranked outside the top twelve counts nothing toward its owner's
+  Portfolio Value, and from the second no team does. Owners may still trade those teams with
+  each other at any price they agree (&sect;9), and a playoff team goes on earning its owner
+  payouts (&sect;12) &mdash; but the payouts are paid in cash, and cash is already counted.
+  From the second date, then, a Portfolio Value is simply that owner's Available Funds, and
+  the final standings &mdash; and the champion &mdash; are decided on what each owner has
+  left against what they put in. Because that date falls before conference championship
+  week, the last weeks of the regular season are played out on cash alone.</p>
+  <p><strong>Both are public, and so is the position behind them.</strong> Every owner can
+  see every other owner's Portfolio Value, Alpha, weekly change, Available Funds and Battle
+  record, and the league's <strong>Official Record</strong> lists every transaction as it
+  happens. What stays private is the itemised money record: an
+  owner's contributions and their Available Funds ledger are theirs and the Commissioner's
+  alone (&sect;13).</p>
+  <p>Playoff payouts (&sect;12) are separate from the standings. They are decided by which
+  teams win playoff games, not by where an owner finishes.</p>
+
+  <h3>League Calendar</h3>
+  <table>
+    <thead><tr><th>Period</th><th>Activity</th></tr></thead>
+    <tbody>
+      <tr><td>Preseason</td><td>Snake Draft</td></tr>
+      <tr><td>Sunday afternoon (AP) / Tuesday evening (CFP)</td><td>Poll published
+      &mdash; Market Values are re-priced</td></tr>
+      <tr><td>The following morning</td><td><strong>Market opens</strong> &mdash;
+      everything queued settles in one pass</td></tr>
+      <tr><td>Until each team plays</td><td>Market is live &mdash; actions on available
+      teams take effect immediately</td></tr>
+      <tr><td>30 min before kickoff</td><td>That team comes off the board until the next
+      market opening</td></tr>
+      <tr><td>Thursday–Monday</td><td>Games Played</td></tr>
+    </tbody>
+  </table>
+  <p>This weekly cycle repeats until the conclusion of the regular season. Once the
+  College Football Playoff begins, playoff payout rules take effect (&sect;12) and the
+  House stops buying teams back (&sect;8) &mdash; but portfolios keep moving: teams may
+  still be traded, bought, added and dropped right through the Championship Game.</p>
+
+  <h2 id="s5">5. The Draft</h2>
+  <p>The draft establishes the initial ownership of teams and creates the opening
+  league economy. It is the only time during the season that owners acquire teams
+  directly from the House without participating in blind bidding. The draft
+  should take place no later than <strong>48 hours before the first scheduled FBS
+  game</strong> of the season.</p>
+
+  <h3>Draft Format</h3>
+  <p>The Commissioner will determine the draft order by random draw. The draft
+  follows a standard <strong>snake draft</strong> format.</p>
+  <p>Example with eight owners — Round 1: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8.
+  Round 2: 8 → 7 → 6 → 5 → 4 → 3 → 2 → 1. This pattern continues until every
+  owner has completed the draft or chooses to stop drafting.</p>
+
+  <h3>Draft Eligibility</h3>
+  <p>Any FBS football team may be selected during the draft. Teams may only be
+  drafted once. Once selected, a team becomes the exclusive property of that
+  owner.</p>
+
+  <h3>Draft Prices</h3>
+  <p>Only teams ranked in the <strong>Preseason AP Top 25</strong> require payment
+  during the draft. Their purchase prices are equal to their published Opening
+  Market Values (#1 = $26 … #25 = $2). The combined value of all Top 25 teams
+  equals <strong>$350</strong>, representing the opening league economy.</p>
+
+  <h3>Unranked Teams</h3>
+  <p>Teams outside the current AP Top 25 and CFP Top 25 may be
+  <strong>added to or dropped from an owner's portfolio at no cost, at any point between
+  the completion of the preseason draft and the close of the season</strong> (&sect;6),
+  subject to the availability rule in &sect;6. Unranked teams may participate
+  in Battles and may be traded between owners, but <strong>may not be sold to the
+  House</strong>. Once a team enters the AP Top 25 or CFP Top 25, it immediately
+  becomes eligible for sale to the House at its current Market Value.</p>
+  <p>This is deliberate: charging for speculative teams discourages exactly the
+  behaviour the league wants. Free unranked teams reward scouting a breakout early
+  rather than simply holding the largest bankroll, and every team an owner picks up
+  is another possible Battle — which feeds the House and grows the prize pool. The
+  portfolio limit (&sect;4) still applies.</p>
+
+  <h3>Contested Free Additions</h3>
+  <p>An unranked team is added the moment you ask for it, provided it is
+  <strong>available</strong> (&sect;6). Two owners who want the same team are settled
+  by who asked first. If the team is not available &mdash; it is about to play, or its
+  last result has not been priced &mdash; the request is queued instead, and queued
+  requests for the same team are settled at the next market opening in the order they
+  were made.</p>
+
+  <h3>No Free Additions Before the Draft Ends</h3>
+  <p>Free teams may not be added <strong>before or during the preseason draft</strong>
+  &mdash; only once it is complete. An unranked team costs nothing to draft and
+  nothing to add, so the two are the same transaction: allowing adds during the draft
+  would let an owner take a team <strong>without spending a pick</strong>, and
+  allowing them beforehand would let owners fill their portfolios before draft night
+  began. Dropping is closed until the draft completes as well &mdash; the market opens
+  as a whole, not one action at a time (&sect;6).</p>
+
+
+
+  <h3>Passing</h3>
+  <p>Owners are not required to fill their portfolio. At any point during the draft,
+  an owner may pass. An owner who passes may continue drafting later if draft
+  rounds are still in progress and portfolio space remains available. The draft
+  concludes when every owner has either filled their portfolio, or every remaining
+  owner passes consecutively.</p>
+
+  <h3>After the Draft</h3>
+  <ul>
+    <li>Team ownership becomes official.</li>
+    <li>Draft payments are deposited into the House Account.</li>
+    <li>Any undrafted team immediately becomes House-owned.</li>
+    <li>Weekly Market Values become effective at the first market opening.</li>
+  </ul>
+
+  <h2 id="s6">6. The Market</h2>
+  <p>For as long as the season is running the market is <strong>open continuously</strong>.
+  What governs whether you can act on a particular team is not the calendar but the
+  <strong>poll</strong>: a team may be bought, sold, added, dropped or traded only while its
+  published Market Value is trustworthy. Everything in this section follows from that one
+  idea. Two calendars sit on top of it: &sect;8's two buyback dates, which close the House's
+  side in stages, and the end of the season itself &mdash; see <em>Close of the season</em>
+  below.</p>
+
+  <h3>Game-locked</h3>
+  <p>A team is <strong>game-locked</strong> from <strong>30 minutes before kickoff</strong>
+  until that game is <strong>officially final</strong>. Nothing may be done with a
+  game-locked team by anyone. Once the game concludes the lock lifts immediately &mdash;
+  there is no waiting for the next poll.</p>
+  <p><strong>What happens next is not the same for both sides of the market</strong>, and it
+  is the part most easily misread. At the final whistle an owner-to-owner
+  <strong>trade</strong> may resume at once, because &sect;9 lets the two owners set their
+  own price. A <strong>House</strong> transaction &mdash; buying, selling, adding, dropping
+  &mdash; stays shut until <strong>the next market opening</strong>, under the first rule
+  below. So a team beaten on Saturday night is tradable straight away and unsellable until
+  Monday morning.</p>
+
+  <h3>When a team is available</h3>
+  <p>Transactions <strong>with the House</strong> &mdash; buying, selling, adding and
+  dropping &mdash; are paid at published Market Value, so they need a price that can still
+  be trusted. A team is <strong>available</strong> for those when all of the following are
+  true:</p>
+  <ol>
+    <li><strong>The week's football has been priced.</strong> No game has been played
+    since the last market opening &mdash; neither this team's, nor the week's.</li>
+    <li><strong>It is not game-locked</strong> (above).</li>
+    <li><strong>It is not carrying a live Battle</strong> (&sect;11).</li>
+  </ol>
+  <p>A team that fails any of these is <strong>unavailable</strong>, and the app tells
+  you which one and when it will clear. Availability is decided per team, not for the
+  league as a whole: on a Thursday in October most of the board is available while the
+  two teams playing that night are not.</p>
+  <p><strong>The first rule is about the WEEK, not only about this team</strong>, and that is
+  worth stating plainly because it is the one people expect to work the other way. Market
+  Value is a team's rank on the published poll, and a rank is a <em>position against the
+  other teams</em> &mdash; so a team that sat out the week is repriced by everybody else's
+  results just as surely as by its own, and most of them are. So once the week's last game
+  has kicked off, the whole board is off the House's side until the opening &mdash; a team
+  that played, and a team that did not, come back at the same moment.</p>
+  <p><strong>And it clears at the OPENING, not when the poll lands.</strong> Those are
+  different moments: the poll is published on the Sunday and the market opens the following
+  morning. Clearing at the poll left a gap in which a team was buyable outright while other
+  owners' sealed bids for it were still queued &mdash; so the bidder who did what &sect;7 asks
+  could be beaten by somebody who simply waited for the poll and took the team. &sect;7 says a
+  bid is what you pay to be sure of <em>a team you cannot simply take now</em>, and this is
+  what makes that true.</p>
+  <p><strong>A Battle is only <em>live</em> once it has bound</strong>, 30 minutes before
+  kickoff (&sect;11). A matchup that has appeared but not yet bound holds nothing: while both
+  owners can see it coming, either of them may still sell, drop or trade the team, and rule 3
+  does not apply until the line freezes. So the third rule falls at the same moment as the
+  second, and what it really adds is the stretch <em>after</em> the final whistle, while the
+  wager is being settled.</p>
+
+  <h3>When a team can be traded</h3>
+  <p>An <strong>owner-to-owner trade</strong> (&sect;9) is not governed by Market Value
+  &mdash; the two owners set their own price &mdash; so a stale price cannot hurt either of
+  them, and rule 1 above does not apply. A team may be traded whenever it is
+  <strong>not game-locked and not carrying a live Battle</strong>. That holds all season,
+  <strong>including throughout the College Football Playoff</strong>: there is no
+  postseason ownership freeze.</p>
+  <p>So a team beaten on a Monday night is tradable the moment that game is final, while
+  it stays off the board for House transactions until the next market opening prices it.
+  The two questions are asked separately because they protect different things: the trade
+  rule protects nobody's price, and the availability rule protects the House from paying
+  a price the result has already overtaken.</p>
+
+  <div class="example">
+    <h4>Why rule 1 exists</h4>
+    <p>Florida State opened 2024 ranked #10 &mdash; a Market Value of $17.00 &mdash; and
+    lost to Boston College on the Labour Day <strong>Monday</strong>, after that
+    Sunday's poll had already been published. The next poll had them unranked, worth
+    $0.00. Between the final whistle and that poll the result was public knowledge and
+    the price was not, so selling to the House at $17.00 would have cost the prize pool
+    $17.00 for a team it could not resell at any price. Rule 1 takes Florida State off
+    the board for those six days. It is not a rare shape: in the 2024 season
+    <strong>21 games</strong> finished after the poll that had already priced their week
+    &mdash; every Sunday, Monday and Tuesday kickoff.</p>
+  </div>
+
+  <h3>Market openings</h3>
+  <p>When a new poll is published and applied, the market <strong>opens</strong> the
+  following morning at the time the Commissioner has set. That opening does two things:
+  it re-prices every team, and it settles everything that has been queued since the last
+  opening.</p>
+  <p>The opening is tied to the poll rather than to a weekday because no weekday works
+  all season &mdash; the AP Top 25 lands on a Sunday afternoon and the Playoff Committee
+  rankings on a Tuesday evening from week 11. Opening the morning after means every
+  owner has had the same overnight period to decide, whatever time the poll actually
+  landed.</p>
+
+  <h3>Close of the season</h3>
+  <p>The market runs <strong>right through the National Championship Game</strong>. Owners
+  may keep buying, bidding, adding, dropping and trading until that game is
+  <strong>final</strong> &mdash; &sect;11 and &sect;12 mean <em>through</em> the
+  Championship Game, not past it.</p>
+  <p>Once the Championship Game ends the <strong>season is over and the market closes</strong>.
+  <strong>All team transactions stop</strong> &mdash; buying, bidding, adding, dropping,
+  selling to the House and owner-to-owner trading &mdash; and nothing reopens until the
+  <strong>next preseason draft</strong>.</p>
+  <p><strong>The close is a clean cutoff.</strong> Anything still unsettled at that moment
+  <strong>expires</strong>: a queued order that has not been applied is cancelled rather than
+  held for a later opening, and a trade the two owners agreed but which never settled is
+  cancelled too. <strong>Nothing carries into the next season.</strong> Both owners are told
+  when a trade ends this way.</p>
+  <p>From there the league moves to <strong>final settlement</strong> (&sect;10): the
+  Commissioner pays out each owner's closing balance, once.</p>
+  <p>The market closes rather than simply going quiet because money paid to the House after
+  the last game has nowhere to go: &sect;10 requires the House Account to finish the season
+  empty, and every playoff payout has already been made by then.</p>
+
+  <h3>Acting now, or queueing</h3>
+  <p><strong>If a team is available, your action happens immediately.</strong> Buying it
+  from the House, selling it back, adding it free, or dropping it all take effect the
+  moment you submit them, at the current Market Value. A <em>conditional</em> drop is the
+  one exception, and &sect;8 explains why.</p>
+  <p><strong>If a team is unavailable, your order is queued</strong> and settles at the
+  next market opening. You are told why it was queued. A queued order can be changed or
+  cancelled at any time before it settles.</p>
+  <p><strong>Speed decides a contested team.</strong> Two owners who want the same
+  available team are settled by who acted first, and two owners whose orders are queued
+  for the same team are settled by who queued first. This is a change from earlier
+  drafts of these rules, which sent contested teams to a waiver order so that reacting
+  quickly would not be an advantage. A live market cannot honour that promise and remain
+  a live market, so the promise is withdrawn rather than left in place untrue.</p>
+  <p><strong>One order per team.</strong> You may have only one queued order for any
+  given team, so you cannot queue both a drop and a sale for the same team.</p>
+
+  <h3>What settles at an opening, and in what order</h3>
+  <p>Everything queued is processed in one pass, in this order:</p>
+  <ol>
+    <li>Drops</li>
+    <li>Sales to the House</li>
+    <li>Owner-to-owner trades</li>
+    <li>Blind bids for House-owned teams</li>
+    <li>Free additions of unranked teams</li>
+    <li>Battle creation for the week ahead</li>
+  </ol>
+  <p>The order follows two principles. <strong>Anything that releases comes before
+  anything that acquires</strong>, so a sale can fund a bid and a drop can free the spot
+  a bid needs, within the same opening. And <strong>a commitment another owner is
+  relying on outranks your own</strong>: a trade is something two people agreed, while a
+  bid or an addition is a decision you made alone, so trades are honoured first.</p>
+  <p>A queued order that is <strong>refused</strong> &mdash; you were outbid, you could
+  not afford it, the team was gone, the team is no longer ranked &mdash; is closed out
+  with the reason. A queued order that simply <strong>could not be tried yet</strong>,
+  because the team is still unavailable, rolls forward to the next opening.</p>
+
+  <h3>Bidding</h3>
+  <p>Blind bidding exists for teams that are <strong>unavailable</strong> when you want
+  them. An available House team is simply bought at Market Value, first come first
+  served; there is nothing to bid against. Bids queued for the same team are settled at
+  the opening by highest amount, and a tie by who bid first. Bidding above Market Value
+  therefore buys certainty, not a discount &mdash; it is what you pay to be sure of a
+  team you cannot simply take now.</p>
+
+  <div class="example">
+    <h4>Example</h4>
+    <p>An owner holding five teams queues a sale of one and a bid on another, both
+    unavailable. At the opening the sale settles first, which frees a portfolio spot and
+    puts the proceeds in their Available Funds &mdash; so the bid can be paid for out of
+    the sale, in the same pass.</p>
+  </div>
+
+  <h3>Portfolio Limits</h3>
+  <p>An owner may never own more than their league's <strong>portfolio limit</strong>
+  &mdash; five teams unless the Commissioner set otherwise before the draft (&sect;4). An
+  action that would put you over the limit right now is refused outright <em>unless you name
+  a team to give up in the same breath</em> (&sect;8). You may also <strong>queue</strong>
+  more than you have room for &mdash; a drop queued alongside may make room, and you will
+  not know which bids you have won until the opening. Anything that would put you over the
+  limit when the opening settles is void, and you are told which and why.</p>
+
+  <h3>Battle stakes come first</h3>
+  <p>Every action is checked against &sect;11's reserve <strong>as it happens</strong>:
+  after it, you must still be able to cover one Battle stake for every team you hold.
+  An action that would leave you unable to stake your own portfolio is refused, whether
+  it executes immediately or settles at an opening. Battles are mandatory, so this is
+  the one limit the market will not let you spend through.</p>
+
+  <h3>Transaction Finality</h3>
+  <p>A completed transaction is final. No transaction may be canceled or modified after
+  it has been processed unless a clerical error materially affected the outcome.</p>
+
+  <h3>Publication of Results</h3>
+  <p>Every action is published as it happens, and every opening publishes its full
+  result: updated team ownership, winning blind bids, completed trades, teams sold to
+  the House, the updated House Account balance, and current owner portfolios.
+  <strong>Every order you queued shows what happened to it</strong>, including why a
+  losing bid lost.</p>
+  <h2 id="s7">7. Buying Teams from the House</h2>
+  <p>After the draft, any team not owned by an owner is considered
+  <strong>House-owned</strong>. There are two ways to acquire one, and which applies
+  depends only on whether the team is <strong>available</strong> (&sect;6):</p>
+  <ul>
+    <li><strong>Available &mdash; buy it now, at Market Value.</strong> The price is the
+    published Market Value, the purchase happens the moment you ask, and the first owner
+    to ask gets the team.</li>
+    <li><strong>Unavailable &mdash; bid for it.</strong> Your bid is queued and settles
+    at the next market opening, against every other bid for that team.</li>
+  </ul>
+  <p>The rest of this section describes the second case.</p>
+
+  <h3>Eligible Teams</h3>
+  <p>Any <strong>ranked</strong> FBS team owned by the House may be acquired through
+  blind bidding &mdash; teams that were never drafted, teams previously sold back to
+  the House, and teams that became House-owned through other league transactions.</p>
+  <p><strong>Unranked teams are not bid on.</strong> A team outside the AP and CFP
+  Top 25 has no Market Value, costs nothing, and may simply be
+  <strong>added</strong> to any owner's portfolio on request, at any point between the
+  completion of the preseason draft and the close of the season (&sect;6), subject only to
+  the portfolio limit (&sect;4). Free teams
+  are deliberately easy to pick up: an owner who spots a rising team early, or who just
+  wants a side in a Battle, should not have to outbid anyone for a team nobody is
+  charging for.</p>
+
+  <h3>Minimum Bid</h3>
+  <p>Every House-owned team has a published <strong>Market Value</strong>, which
+  serves as the <strong>minimum acceptable bid</strong>. Owners may submit any bid
+  <strong>equal to or greater than</strong> the team's current Market Value.
+  <strong>Bids below Market Value are automatically rejected.</strong></p>
+
+  <h3>Blind Bidding</h3>
+  <p>Blind bids are confidential. No owner may view another owner's bid before the
+  market opens. Owners submit one sealed bid for each team they wish to acquire.</p>
+  <p>Bidding above Market Value buys <strong>certainty, not a discount</strong>. Bid the
+  minimum and you pay the minimum if nobody else wants the team; bid more and you are
+  covered if they do. A team that becomes available before the opening can be bought at
+  Market Value by whoever asks first, so a bid is a claim on a team you cannot take
+  right now.</p>
+
+  <h3>Winning Bid</h3>
+  <p>At the market opening, all bids are opened at once. The owner submitting
+  the <strong>highest valid bid</strong> acquires the team, and the winning bid amount
+  is deposited in full into the House Account. Nobody reviews or approves this &mdash;
+  the highest bid wins, so there is nothing to decide.</p>
+  <div class="example">
+    <h4>Example</h4>
+    <p>Notre Dame is House-owned with a Market Value of <strong>$18</strong>.
+    Bids: Spencer $18, Mike $20, Sarah $23, Chris $19. Sarah submitted the highest
+    valid bid, becomes the owner of Notre Dame, and $23 is deposited into the
+    House Account.</p>
+  </div>
+
+  <h3>Tie Bids</h3>
+  <p>If two or more owners submit identical highest bids, the winning owner is the one
+  who queued theirs first, timed to the millisecond.</p>
+
+  <h3>Multiple Bids, and Ranking Them</h3>
+  <p>Owners may submit blind bids on as many House-owned teams as they wish.
+  However, an owner may never exceed the portfolio limit. If multiple winning
+  bids would exceed it, <strong>you choose which ones you keep</strong>: rank your bids
+  in the order you want them, and the highest-ranked bids that fit are processed. The rest
+  are void, and you are told which and why.</p>
+  <p>A bid you give up this way is not withdrawn from the auction &mdash; it simply stops
+  being yours to win, and <strong>the next-highest bidder inherits the team</strong>. So
+  ranking is a decision about your own portfolio, never a way to keep a team away from
+  somebody else.</p>
+  <p>You rank bids from the dashboard, alongside the queue itself, any time before the
+  market opening settles them. A new bid joins the bottom of your ranking, so if you never
+  touch the order it is the one you queued first that you keep.</p>
+
+  <h3>Bidding Within Your Means</h3>
+  <p>The <strong>total</strong> of an owner's open bids may not exceed their Available
+  Funds, less the Battle stake reserve their portfolio requires (&sect;11). Because bids are sealed and resolved
+  together, an owner who bid more in total than they could pay might win several
+  teams at once and be unable to settle them &mdash; and there would be no principled
+  way to choose which wins to honor. Bids that would take an owner's outstanding
+  total past their Available Funds are rejected when submitted.</p>
+
+  <h3>Payment</h3>
+  <p>The winning owner pays the full amount of their submitted bid. There are no
+  refunds or discounts. Because bids are voluntary, every owner is responsible for
+  determining the maximum amount they are willing to pay.</p>
+
+  <h2 id="s8">8. Selling Teams to the House</h2>
+
+  <h3>House Liquidity: what the House will buy, and when</h3>
+  <p>The House's willingness to buy <strong>narrows in three stages</strong> as the season
+  runs toward the playoff. Each boundary is a <strong>date the Commissioner sets before the
+  draft</strong> and publishes to the league:</p>
+  <table>
+    <thead><tr><th>From</th><th>The House buys</th></tr></thead>
+    <tbody>
+      <tr><td>The start of the season</td>
+          <td>Any team in the <strong>Top 25</strong>, at Market Value</td></tr>
+      <tr><td>The <strong>first buyback date</strong></td>
+          <td>Only teams ranked <strong>1&ndash;12</strong>, at Market Value. Teams ranked
+          13&ndash;25 may no longer be sold back.</td></tr>
+      <tr><td>The <strong>second buyback date</strong></td>
+          <td><strong>Nothing.</strong> House buybacks cease entirely for the rest of the
+          season, including for teams ranked 1&ndash;12.</td></tr>
+    </tbody>
+  </table>
+  <p>The dates are the league's own and need not track the College Football Playoff
+  calendar. The second one <strong>should fall before conference championship week</strong>,
+  which closes the House for the last stretch of the regular season as well as for the
+  postseason: an owner goes into the championships committed to the roster they hold.</p>
+  <p>That is the <strong>recommended structure and not a requirement</strong>. Much of a
+  league's setup is left to the Commissioner's discretion and this is no different, so a
+  Commissioner may set a later date. The app warns them where it would fall &mdash; on the
+  settings screen, and again in the Draft Room before the first pick, which is the last
+  moment either date can be changed &mdash; and then lets them proceed.</p>
+  <p>Both dates are <strong>fixed when the draft begins</strong> and cannot be moved for the
+  rest of the season (&sect;16). Owners plan an exit around them, and a boundary the
+  Commissioner could move is a boundary they could move to suit their own portfolio, which
+  &sect;13 forbids. A league whose Commissioner has not set both dates cannot start its
+  draft.</p>
+  <p><strong>This is about buying, not about pricing.</strong> Market Values continue to
+  follow whichever poll is current (&sect;7) &mdash; the AP poll, and the Playoff Committee's
+  once it is released. A team therefore keeps a Market Value that rises and falls after the
+  House has stopped paying it, which is what it is worth to another owner in a trade
+  (&sect;9) and nothing more.</p>
+  <p><strong>Unranked teams are never bought back</strong>, at any point in the season.
+  They cost nothing to acquire and have no Market Value for the House to pay; drop one for
+  free instead (&sect;8, Dropping a Team).</p>
+  <p><strong>The House may also refuse a sale it cannot fund.</strong> The House Account
+  never goes negative and there are no partial buybacks: a team is bought back at its
+  <em>full</em> Market Value or not at all. If the House holds less than that, the sale is
+  refused and the owner keeps the team.</p>
+  <p>Where several eligible sales together would exceed what the House holds, they are
+  processed <strong>in the order they were submitted</strong>. Each is paid in full until the
+  House cannot cover the next one, and that one is refused. This is the one limit on
+  buybacks that does not depend on the team or the date &mdash; two owners holding
+  identically ranked teams can get different answers in the same minute, decided by who
+  asked first.</p>
+  <p>The staging prevents a late-season sell-off from shrinking the prize pool on the way
+  into the playoff, while leaving owners a real exit for as long as it is safe to offer
+  one. Published in advance and frozen at the draft, the two dates make that exit something
+  an owner can plan around rather than something that arrives when a poll happens to. Everything else continues at every stage: owner-to-owner trades remain permitted
+  (&sect;9), owners may still buy eligible unowned teams from the House, and the House
+  Account remains active and may keep growing through Battles, purchases from the House,
+  fees, and other league activity. The House Account is the official
+  <a href="#s12">Playoff Prize Pool</a>, and its final value is determined at the
+  conclusion of the season.</p>
+  <p>These limits apply to <strong>every</strong> route by which a team could reach the
+  House, not merely to a sale an owner chooses. Nothing in this rulebook sells a team on an
+  owner's behalf (&sect;11), so there is no automatic process that could return one to the
+  House after buybacks have closed.</p>
+
+  <p>Owners may sell a team they own back to the House while the House is still buying
+  teams of that rank, and while that team is <strong>available</strong> (&sect;6).
+  A sale of an available team happens immediately; a sale of an unavailable one
+  is queued and settles at the next market opening. <strong>A queued sale is paid at the
+  Market Value on the day it executes, not the day it was queued</strong> &mdash; a poll
+  lands in between, and it is the poll that sets the price. A team
+  outside the AP and CFP Top 25 has no
+  Market Value for the House to pay, and cost nothing to acquire — it may be dropped
+  for free instead (&sect;8, Dropping a Team), and becomes sellable the moment it is
+  ranked. Selling to the House allows an owner to exit a position, free a portfolio
+  spot, or realize gains before a team's Market Value declines. Unlike
+  owner-to-owner trades, sales to the House always occur at the team's published
+  Market Value.</p>
+
+  <h3>Sale Price</h3>
+  <p>The House purchases teams at their current published <strong>Market
+  Value</strong>. Market Value is determined using the weekly pricing schedule
+  published by the Commissioner and is not subject to negotiation. The House pays
+  the <strong>full Market Value</strong> &mdash; there is no fee and no
+  deduction.</p>
+
+  <div class="example">
+    <h4>Example: Selling a Team</h4>
+    <p>An owner drafted Penn State for $15. Six weeks later Penn State has a
+    Market Value of $24.</p>
+    <table>
+      <tbody>
+        <tr><td>Purchase Price</td><td class="money">$15.00</td></tr>
+        <tr><td>Current Market Value</td><td class="money">$24.00</td></tr>
+        <tr><td><strong>Amount Paid to Owner</strong></td><td class="money"><strong>$24.00</strong></td></tr>
+      </tbody>
+    </table>
+    <p>The owner receives $24.00 and keeps the whole $9.00 gain. Because the House
+    always pays Market Value, the same rule runs the other way: an owner who paid
+    $22 for a team whose Market Value has since fallen to $17 is paid $17.00, and
+    the $5.00 difference is a real loss.</p>
+  </div>
+
+  <h3>Effect on Ownership</h3>
+  <p>Once a team is sold, ownership immediately transfers to the House and the selling
+  owner permanently relinquishes all rights to the team unless they reacquire it through
+  a future transaction. It goes back on the board on &sect;7's usual terms: any owner may
+  buy it at Market Value while it is available, or bid for it if it is not.</p>
+
+  <h3>Dropping a Team</h3>
+  <p>An owner may <strong>drop</strong> any <strong>available</strong> team in their
+  portfolio at any point in the season, returning it to the House for <strong>$0.00</strong>. Dropping
+  requires no Commissioner approval, and a drop of an available team takes effect
+  immediately. Dropping a team that is unavailable is queued like anything else.</p>
+  <p>Dropping exists because the House only buys ranked teams, so an owner needs a way
+  to release one that has no buyer — to free a portfolio spot, to shed a team they no
+  longer believe in, or to make room for a blind bid that succeeds. Drops settle first
+  at a market opening, before anything that needs a spot, which is what lets a drop
+  and a bid at the same opening work together. The owner receives nothing, so no
+  competitive advantage is gained beyond the roster spot.</p>
+  <p>An owner may also file a <strong>conditional drop order</strong>: a team to be
+  dropped automatically if a pending acquisition lands &mdash; a blind bid that wins, or a
+  free-agent request that is granted &mdash; and the portfolio limit would otherwise be
+  exceeded. The team is given up only if the acquisition it was filed against actually
+  happens; if the bid is outbid, or another owner asked for the free team first, the
+  owner keeps it.</p>
+  <p>A conditional drop always settles at the next opening, even when the team is
+  available &mdash; which is the one exception to &sect;6's rule that an available team is
+  acted on at once. What it waits on is the acquisition, not the team, and that outcome is
+  not known until the opening. Releasing it immediately would give the team up whether or
+  not the acquisition landed, which is the loss this instrument exists to prevent.</p>
+  <p><strong>A conditional drop executes only if an acquisition actually lands
+  <em>and</em> a roster spot is needed for it.</strong> If the owner already has an open
+  spot, or none of the acquisitions they won that opening requires one, nothing is dropped
+  and the team is kept.</p>
+  <p>An owner may file more than one. At an opening the <strong>earliest eligible</strong>
+  one is used first. Any that are not needed <strong>expire at the end of that
+  opening</strong> &mdash; they do not carry forward, so a drop filed one week can never
+  fire against an acquisition made in a later one. An owner who still wants the option
+  files it again.</p>
+
+  <h3>Drops and the Portfolio Limit</h3>
+  <p>An owner must have an available roster spot <strong>before</strong> any
+  acquisition is finalized. A drop may not be made retroactively to satisfy the
+  portfolio limit after an auction has already resolved &mdash; a winning bid that
+  would exceed the limit is void, and the next-highest bid inherits the team.</p>
+  <p>A conditional drop order is not retroactive: it is filed in advance and executes
+  as part of resolving the acquisition, so the spot exists at the moment the acquisition
+  is finalized rather than being created afterwards. The same reasoning permits an owner
+  at the limit to take an <em>available</em> team by naming one to give up: the drop and
+  the purchase happen together, so the spot is not created after the fact. If either half
+  is refused, neither happens.</p>
+  <p><strong>A team given up to make room is sold before it is dropped.</strong> Whether it is
+  given up in the same breath or by a conditional drop, the House buys it at its Market Value
+  whenever it would buy it as an ordinary sale under the stages above, and the owner is paid
+  exactly as if they had sold it first. Only a team the House would not buy &mdash; unranked,
+  or outside what the current stage buys &mdash; is dropped for $0.00.</p>
+  <p><strong>Making room in the same breath</strong> is subject to all of the following.
+  The team being given up:</p>
+  <ol>
+    <li>must itself be <strong>available</strong> (&sect;6) &mdash; a team that is
+    game-locked or carrying a live Battle cannot be released;</li>
+    <li>must not already carry <strong>another order</strong> this window, since a team can
+    only be promised once;</li>
+    <li>must not be <strong>committed to a pending trade</strong> (&sect;9).</li>
+  </ol>
+  <p>The <strong>Battle stake reserve</strong> (&sect;11) is then tested against the roster
+  and the cash the transaction <em>leaves behind</em> &mdash; the team acquired counts, the
+  team released does not, and what the House pays for it does.</p>
+  <p>This mechanism applies to <strong>immediate acquisitions only</strong>. An owner whose
+  acquisition is queued to the next opening uses the <strong>conditional drop</strong>
+  above instead: a queued order does not yet know whether it will land, and giving a team up
+  for an acquisition that then fails is the loss these two instruments exist to prevent.</p>
+
+  <h2 id="s9">9. Owner-to-Owner Trades</h2>
+  <p>Owners may freely negotiate the purchase, sale, or exchange of teams with one
+  another at any time during the season, up to the moment the Championship Game becomes
+  final (&sect;6). Unlike transactions involving the
+  House, owner-to-owner trades are <strong>not governed by Market Value</strong>.
+  Instead, they are governed entirely by mutual agreement between the
+  participating owners.</p>
+
+  <h3>Free Market Pricing</h3>
+  <p>Market Value serves only as a benchmark during owner-to-owner negotiations.
+  Owners may agree to any purchase price regardless of the team's published Market
+  Value — above, at, or below. No approval is required from the Commissioner
+  regarding the negotiated price.</p>
+  <p>The Commissioner does not determine whether a trade is "fair." If both owners
+  voluntarily agree to the transaction, it is valid.</p>
+
+  <h3>Forms of Compensation</h3>
+  <p>Owners may negotiate transactions using cash only, teams only, or teams plus
+  cash. Examples include: Alabama for $20; Michigan for Notre Dame; Oregon and $5
+  for Penn State; Georgia for Clemson and $8. Any of those is permitted, provided
+  both owners agree and all portfolio limits are maintained.</p>
+  <p><strong>A trade moves at most one team in each direction, plus cash.</strong>
+  One team may go each way, or a single team may go one way for cash; a trade may
+  not bundle two or more teams travelling together. And cash only ever moves
+  <em>against</em> a team coming the other way &mdash; there is no cash-only trade,
+  because a payment with no team behind it is a gift rather than a trade, and the
+  league keeps no record of what it bought.</p>
+  <p>Whatever the shape, the whole exchange happens at once or not at all: both
+  teams change hands and the cash moves in the same moment. Nobody hands over a
+  team and waits to see whether the other half arrives.</p>
+
+  <h3>Trade Submission</h3>
+  <p>One owner proposes the trade and the other confirms it. The proposal identifies
+  the participating owners, the teams changing ownership, and any cash exchanged. The
+  counterparty's confirmation is what makes the trade official; nobody else approves
+  it.</p>
+  <p><strong>A proposal does not expire.</strong> It stands until one of three things
+  happens: it is <strong>accepted</strong>, it is <strong>declined</strong> by the owner it
+  was sent to, or it is <strong>cancelled</strong> by either owner. Nothing times it out.
+  A trade that has been agreed but cannot settle yet &mdash; because a team is game-locked
+  or carrying a live Battle (&sect;6) &mdash; simply stays pending until settlement is
+  possible, however many market openings that takes.</p>
+
+  <p><strong>A trade costs nothing beyond the cash the two owners agree.</strong>
+  No fee is charged for trading, and nothing is owed to the House when a team
+  changes hands.</p>
+
+  <h3>Trade Processing</h3>
+  <p><strong>A trade settles the moment the second owner confirms it</strong>, provided
+  every team involved is <strong>available</strong> (&sect;6). Ownership transfers and
+  cash is exchanged according to the agreed terms, immediately. Processed trades are
+  final.</p>
+  <p>A trade is not gated on the poll, because its price is not derived from the poll
+  &mdash; the two owners set it themselves and price the risk between them. What does
+  apply is availability: a team about to play, or one carrying a live Battle, cannot
+  change hands. A trade agreed on such a team is held and settles at the next market
+  opening.</p>
+  <p>If a trade cannot complete &mdash; because a portfolio filled up, or a team stopped
+  being available before the opening settled &mdash; it is <strong>held, not
+  cancelled</strong>, and settles at the next opening instead. Neither owner loses a
+  trade they agreed to because of one week's timing.</p>
+
+  <div class="callout">
+    <span class="tag">Trades are a free market</span>
+    <p>A trade needs <strong>no approval</strong>. If two owners agree, the trade is
+    agreed &mdash; the league does not need a third person to bless it, and cash in a
+    trade moves directly between the two owners without ever passing through the House.
+    The app still enforces every league rule on both sides: the portfolio limit, the
+    lock rules, and whether the buyer can actually pay.</p>
+  </div>
+  <p>A settled trade stands. The Commissioner does not unwind one: both teams and the
+  cash have already changed hands, and the app enforces every league rule on both sides
+  before it settles, so a trade that breaks one does not complete in the first place. Two
+  owners who agree they got it wrong can simply trade back. The Commissioner may raise a
+  concern about collusion with the league under &sect;13, which is not a routine step and
+  does not delay a trade.</p>
+
+  <h2 id="s10">10. The House Account</h2>
+  <p>The House Account serves as the central treasury for the league. Every dollar
+  owners <strong>spend</strong> is deposited into the House Account and remains there
+  until the conclusion of the College Football Playoff; money paid in but not yet
+  spent sits in that owner's Available Funds (&sect;3). The House Account exists solely
+  to collect league funds and distribute playoff winnings. The House does not
+  retain profits, and no funds carry over to future seasons. At the conclusion of
+  each season, the House Account balance is reduced to <strong>$0.00</strong>.</p>
+
+  <h3>Sources of Funds</h3>
+  <h4>Draft Purchases</h4>
+  <p>Owners purchasing preseason AP Top 25 teams during the draft pay the team's
+  Opening Market Value. If every preseason Top 25 team is drafted, the House
+  Account begins the season with <strong>$350.00</strong>.</p>
+
+  <h4>Blind Bids</h4>
+  <p>Whenever an owner acquires a House-owned team through blind bidding, the
+  owner's <strong>entire winning bid</strong> is deposited into the House Account.</p>
+
+  <h4>Battle Entry Fees</h4>
+  <p>The <strong>House Fee</strong> — <strong>10% of every Battle pot</strong> by default,
+  unless your Commissioner set it otherwise before the draft — is deposited into the House
+  Account (&sect;11). A push or a canceled game refunds both stakes and takes no fee, so a
+  Battle contributes only when it pays out.</p>
+
+  <h4>Other League Fees</h4>
+  <p>Any additional league fees must be approved before the season begins and
+  clearly communicated to all owners. No new fees may be introduced after the
+  draft without unanimous owner approval.</p>
+
+  <h3>Transparency</h3>
+  <p>The Commissioner shall publish the House Account balance after each market
+  opening. At a minimum, the weekly update should include the beginning
+  balance, draft payments (if applicable), blind bid revenue, Battle entry fees
+  collected, and the ending balance. This allows
+  every owner to verify that league funds are being tracked accurately throughout
+  the season.</p>
+
+  <h3>End of Season Distribution</h3>
+  <p>Following the conclusion of the College Football Playoff National Championship,
+  <strong>100% of the House Account</strong> is distributed according to the official
+  playoff payout schedule. No portion is retained by the House, the Commissioner, or the
+  league, and the House Account must equal $0.00 before the season is complete.</p>
+  <p>Each share is credited to the winning owner's <strong>Available Funds</strong>
+  rather than handed over on the spot. Once every share has been paid and the House is
+  empty, the Commissioner settles the season in one payment per owner, against their
+  final balance (&sect;3). That way an owner receives a single figure covering the whole
+  year — buy-in, trades, Battles and playoff winnings together — instead of a
+  fortnight of separate payments.</p>
+
+  <h3>Unclaimed Playoff Shares</h3>
+  <p>A playoff share is paid to the owner of the winning team. When a winning team is
+  <strong>House-owned</strong> &mdash; nobody drafted or bought it &mdash; there is no
+  owner to pay, and that share is neither forfeited nor kept by the House. It is
+  <strong>added to the rounds still to be paid</strong>, in proportion to their
+  percentages, so the remaining winners share it.</p>
+  <p>Because the National Championship is the last share paid, it absorbs whatever
+  remains &mdash; which is what makes the $0.00 above a guarantee rather than an
+  expectation. In the single case where the champion itself is House-owned, and there
+  is no later round to carry the share into, whatever remains is <strong>returned to
+  the owners in proportion to what each contributed</strong>. The House ends every
+  season at $0.00 without exception.</p>
+
+  <h2 id="s11">11. Battles</h2>
+  <p>A <strong>Battle</strong> occurs whenever two owners each own teams that are
+  playing one another during the regular season or the conference championship
+  games. Where Market Value reflects a team's standing in the marketplace, Battles
+  reward on-field performance, and they turn every head-to-head matchup between two
+  owned teams into a stake in that week's result.</p>
+
+  <div class="callout">
+    <span class="tag">Battles are mandatory</span>
+    <p>Battles are <strong>not optional and are not proposed</strong>. If you own a
+    team and another owner owns its opponent, you are in a Battle for that game. The
+    matchup itself creates it.</p>
+  </div>
+
+  <h3>No Battles in the Postseason</h3>
+  <p>Battles cover the regular season and the conference championship games only.
+  <strong>There are no Battles in bowl games or in the College Football Playoff.</strong>
+  Postseason games are already paid under &sect;12, which awards a percentage of the
+  Prize Pool for every Playoff win &mdash; so a postseason Battle would pay the same
+  result twice, and would do it in a way that changes the pool it is being paid from:
+  a Battle deposits 10% of its pot into the House, while &sect;12 pays out of the House.
+  The postseason is settled one way, by &sect;12.</p>
+
+  <h3>When a Battle Exists</h3>
+  <p>A Battle appears as soon as both teams in a game are owned by different owners, and it
+  <strong>binds 30 minutes before kickoff</strong>, at the moment the line freezes. Until it
+  binds nothing has been staked and neither team is held: either owner may still sell, drop
+  or trade the team away, and the matchup simply dissolves. Whoever holds the two teams when
+  the line freezes is in the Battle, and from that moment it is mandatory.</p>
+  <p><strong>You can always walk away from a Battle. You cannot keep the team and walk
+  away.</strong> That is the whole of the rule. Giving a team up to avoid a matchup is a
+  legitimate move rather than an exploit &mdash; it costs you the team, which is a real
+  price, and the other owner may do the same. What no owner can do is hold a team through
+  the freeze and then decline the wager it brings.</p>
+  <p><strong>Acquiring a team in order to create a Battle is strategy, not an exploit.</strong>
+  An owner may take an available team &mdash; including a free unranked one &mdash; because
+  they like the matchup. They still risk the stake and still spend a portfolio spot, the team
+  must be acquired <em>before</em> the game lock (&sect;6), and the wager settles on the line
+  30 minutes before kickoff rather than the one showing when they acted. The owner on the
+  other side is not asked, but they are not trapped either: they may give the team up at any
+  point before the freeze.</p>
+  <p><strong>No Battle is created once a game has kicked off.</strong> A team is
+  <strong>game-locked</strong> from 30 minutes before kickoff until its game is officially
+  final (&sect;6), so it cannot ordinarily change hands while the game is being played at
+  all. That lock depends on the league holding the game on its schedule, and it lifts if
+  the game is never marked final &mdash; so if a team <em>does</em> change hands with its
+  game under way, <strong>no Battle is created for that game</strong>: neither owner may
+  take on a stake in a result that is already being decided.</p>
+  <p><strong>No Battle binds that an owner cannot pay for.</strong> The stake is taken at the
+  freeze, and that is the only moment it is asked for. If either owner cannot cover it then,
+  the Battle does not bind, nothing is staked, neither team is held, and both owners are told
+  why. <strong>There is no second attempt</strong> &mdash; being topped up after the freeze
+  does not revive it. &sect;11's reserve exists precisely so this never arrives as a surprise:
+  it holds a stake behind every game your teams play, all week, and the app tells you how much
+  is being held. The
+  consequence is worth stating
+  plainly: an owner who is perfectly solvent gets <strong>no Battle that week</strong> if
+  the owner on the other side is short. The alternatives are worse. A reduced stake is not
+  the stake this league agreed; letting a balance go negative pays the winner and the House
+  with money that does not exist; and awarding the game to the solvent owner would settle a
+  wager nobody made.</p>
+  <p><strong>Both teams come off the board when the Battle binds</strong> and stay off it
+  until it has settled. A team carrying a live wager may not be traded, sold to the House, or
+  dropped &mdash; the owner on the other side is entitled to face the team they were matched
+  against. This is the third availability rule in &sect;6. It falls at the same moment as the
+  game lock, so in practice the Battle adds nothing to how long a team is held: what it does
+  is carry the hold past the final whistle, until the wager is settled. After that the
+  team is still unavailable until the next market opening prices its result, under the
+  first rule.
+  <p>The point spread is fixed <strong>30 minutes before kickoff</strong> and does not
+  move afterwards. Lines are volatile in the last minutes before a game, and freezing
+  early settles the wager on a stable number rather than on whichever quote happened to
+  be showing at kickoff.</p>
+  <p><strong>Every Battle uses that line, whenever it was created.</strong> A Battle written
+  on the Tuesday settles on the same number as one written an hour before kickoff &mdash; so
+  acquiring a team early cannot lock in a line that has since moved. If no line is quoted by
+  then, the game settles <strong>straight up</strong>.</p>
+
+  <h3>Standard Battle Rules</h3>
+  <ul>
+    <li>Each owner contributes the league's standard stake &mdash; <strong>$5</strong>
+    unless your Commissioner set it otherwise before the draft.</li>
+    <li>The wager follows the <strong>point spread</strong> published by the league's
+    designated sportsbook &mdash; <strong>DraftKings</strong>, falling back to another book
+    only where DraftKings has not quoted the game. Which book decided each Battle is
+    recorded and shown with the result.</li>
+    <li>The winning owner receives the pot, less the league's House Fee.</li>
+    <li>The <strong>House Fee</strong> &mdash; <strong>10% of every Battle pot</strong>,
+    unless your Commissioner set it otherwise before the draft &mdash; is deposited into
+    the House Account, increasing the season-ending prize pool. The fee in force when a
+    Battle is created is the fee that Battle pays, so a later change never re-prices a
+    wager two owners have already agreed to.</li>
+  </ul>
+  <p>At the standard stake and the default fee, a $5-per-owner Battle creates a $10 pot:
+  $1.00 to the House Account and <strong>$9.00 to the winning owner</strong>.</p>
+
+  <h3>Keeping Enough to Cover Your Battles</h3>
+  <p>Because Battles are mandatory, every owner must keep enough in Available Funds to
+  cover <strong>one stake for every game their teams play this week</strong>, and never
+  fewer than one stake per team. Holding four teams means keeping four stakes back; if one
+  of those four plays twice in the same week &mdash; which happens when the season opens,
+  because the &ldquo;Week 0&rdquo; games are filed as week one &mdash; that is five, because
+  both games are Battles. A team on a bye still holds its one stake back. The app will not
+  let you queue a bid that would spend into that reserve, and it tells you how much is being
+  held.</p>
+  <p><strong>The reserve lasts exactly as long as the Battles do.</strong> It exists to
+  guarantee a stake for a wager the rules compel you into, so once no Battle can be
+  created it is securing nothing and is released in full. Battles cover the regular season
+  and the conference championship games only, so from the end of that week nothing is held
+  back &mdash; your Available Funds are yours to spend for the rest of the year, and the
+  market stays open right through the National Championship (&sect;12).</p>
+  <h3>Margin Call</h3>
+  <p><strong>Nothing is ever sold or dropped on your behalf.</strong> The league does not
+  liquidate an owner's teams to cover the reserve, at any point in the season. Instead, an
+  owner whose available cash is below their required reserve enters <strong>Margin
+  Call</strong>.</p>
+  <p>The only way to get there is by <strong>losing Battles</strong>, which nobody chooses
+  to do &mdash; every other route is checked before it happens, from your first draft pick
+  (&sect;5) to every market action afterwards (&sect;6).</p>
+  <p>While under Margin Call you may not do anything that <strong>increases your
+  exposure</strong>:</p>
+  <ol>
+    <li>No buying teams from the House, and no blind bids.</li>
+    <li>No accepting a trade that increases the number of teams you hold.</li>
+    <li>No raising a Battle stake.</li>
+  </ol>
+  <p>Everything that reduces your exposure or brings money in remains open, and these are
+  how you get out:</p>
+  <ol>
+    <li>Deposit additional funds (&sect;3).</li>
+    <li>Trade a team to another owner for cash, or make any trade that does not grow your
+    portfolio (&sect;9).</li>
+    <li>Sell an eligible team back to the House, where House buybacks are still permitted
+    (&sect;8).</li>
+    <li>Drop a team, which costs nothing and removes a stake from what you need.</li>
+  </ol>
+  <p><strong>Margin Call is tested when you act.</strong> If you are in good standing at the
+  moment you submit a bid or a free addition, that order stands &mdash; entering Margin Call
+  afterwards does not retroactively cancel it, and a queued order is never withdrawn because
+  of a Battle you lost in between.</p>
+  <p>The <strong>reserve requirement itself is still checked when the acquisition
+  settles</strong>. An order that would leave you unable to keep a stake for every team you
+  would then hold is refused at that point, whether or not you are under Margin Call. The
+  question asked at the opening is therefore &ldquo;can this owner support this team&rdquo;,
+  not &ldquo;has this owner been in good standing since they queued it&rdquo;.</p>
+  <p>Margin Call is not a penalty and carries no fee &mdash; it is a pause on growth until
+  you can cover the Battles you already have. Your Battles continue to be created and
+  settled normally while you are in it, provided you can fund them; one that cannot be
+  funded is not created, and both owners are told (&sect;11).</p>
+
+
+  <h3>Raising the Stakes</h3>
+  <p>Owners aren't limited to the standard $5 wager. If <strong>both owners agree
+  before kickoff</strong>, they may increase the Battle amount to any mutually
+  agreed value — for example $10, $20, or $50 per owner. The 10% House Fee applies
+  to the raised pot as well.</p>
+  <p><strong>A raise may be agreed from the moment the matchup appears</strong>, days before
+  it binds. Waiting for the freeze would leave half an hour to propose a raise and get an
+  answer, which is no time to agree anything. An agreed raise is the stake that will be taken
+  when the Battle binds &mdash; and, like the Battle itself, it dies with the matchup: an
+  owner who gives the team up before the freeze pays nothing, whatever was agreed.</p>
+  <p>This creates room for friendly rivalries, high-stakes matchups, and larger
+  additions to the House Account and prize pool.</p>
+
+  <h3>Determining the Winner</h3>
+  <p>The owner whose team covers the point spread wins the Battle. The spread is the
+  one that stood <strong>30 minutes before kickoff</strong> (&sect;15) and does not
+  move after that; one owner holds the favorite and the other the underdog by virtue
+  of which team each owns.</p>
+  <p>If the game is canceled or declared a no contest, all Battle stakes are
+  refunded.</p>
+
+  <h3>Ties and Pushes</h3>
+  <p>If the result lands exactly on the spread (a push), or an officially sanctioned
+  tie occurs, each owner receives a refund of their original Battle stake. No House
+  Fee is taken and no payout is awarded.</p>
+
+  <h3>Battle Limits</h3>
+  <p>Owners may be in as many Battles in a week as their portfolio creates — one for
+  each of their teams facing another owner's team. Each scheduled game produces at
+  most one Battle, since a game has only two teams.</p>
+
+  <h2 id="s12">12. College Football Playoff Payouts</h2>
+  <p>The objective of Sharps Pick 'Em is to own teams that advance through the
+  College Football Playoff. As teams win playoff games, their owners earn payouts
+  from the House Account according to the official playoff payout schedule.</p>
+  <p><strong>The prize pool is not a champion's prize.</strong> Unlike traditional
+  fantasy sports, no part of it is awarded for finishing top of the standings: owners are
+  paid each time one of their teams wins a playoff game, and nothing else. The league
+  champion (&sect;4, decided on Alpha) wins the league &mdash; not the pool.</p>
+
+  <h3>The Playoff Prize Pool</h3>
+  <p>At the conclusion of the regular season, the House Account becomes the
+  official playoff prize pool. The <strong>entire balance</strong> of the House
+  Account is distributed before the season concludes.</p>
+
+  <h3>There is no ownership lock</h3>
+  <p><strong>Teams keep changing hands throughout the playoff.</strong> There is no
+  postseason freeze: owners may trade with one another, bid, buy, add and drop right
+  through the National Championship Game, subject only to the ordinary rules
+  &mdash; a team is untouchable while it is game-locked or carrying a live Battle
+  (&sect;6), and the House buys nothing from the second buyback date onward (&sect;8).</p>
+  <p>So <strong>a payout goes to whoever owns the team at the moment it wins its game</strong>,
+  not to whoever held it when the bracket was announced. A team traded away between rounds
+  takes its remaining payouts with it, and a team bought mid-bracket earns for its new
+  owner from that point on. Price that in when you deal during the playoff: what you are
+  buying is the rest of a run, and what you are selling is the same.</p>
+
+  <h3>Playoff Game Payouts</h3>
+  <p>Each College Football Playoff game awards a fixed percentage of the
+  <strong>final House Account</strong> to the owner of the winning team.</p>
+  <table>
+    <thead><tr><th>Round</th><th class="money">Games</th><th class="money">Payout Per Win</th><th class="money">Total</th></tr></thead>
+    <tbody>
+      <tr><td>First Round bye <span style="color:var(--chalk-dim)">(top-4 seed)</span></td><td class="money">4</td><td class="money">3%</td><td class="money">12%</td></tr>
+      <tr><td>First Round win</td><td class="money">4</td><td class="money">3%</td><td class="money">12%</td></tr>
+      <tr><td>Quarterfinals</td><td class="money">4</td><td class="money">6%</td><td class="money">24%</td></tr>
+      <tr><td>Semifinals</td><td class="money">2</td><td class="money">11%</td><td class="money">22%</td></tr>
+      <tr><td>National Championship</td><td class="money">1</td><td class="money">30%</td><td class="money">30%</td></tr>
+      <tr><td><strong>Total</strong></td><td class="money"><strong>15</strong></td><td class="money">—</td><td class="money"><strong>100%</strong></td></tr>
+    </tbody>
+  </table>
+  <p>Each percentage is calculated against the <strong>Prize Pool</strong> — the House
+  Account balance recorded when the playoff begins. A <strong>First Round bye</strong>
+  — earned by each of the four top seeds — is credited as a 3% payout, the same as
+  winning a First Round game: the round pays the same whether you played it or earned the
+  right not to. The top seeds' reward is the guaranteed place in the Quarterfinals and a
+  week without a game that could end their season, not extra money.</p>
+  <p>One case moves a payout off the table above. If a winning team is
+  <strong>House-owned</strong>, there is nobody to pay, and that share is added to the
+  rounds still to be paid rather than kept (&sect;10) — so those later rounds pay
+  <em>more</em> than their stated percentage. Absent any unclaimed share, the table
+  applies exactly as written, and either way the fifteen payouts distribute the whole
+  Prize Pool.</p>
+
+  <div class="example">
+    <h4>Example</h4>
+    <p>Assume the House Account contains $600 at the start of the playoff and that
+    every winning team is owned. A First Round bye is worth $18, a First Round win $18,
+    a Quarterfinal $36, a Semifinal $66, and the National Championship $180. A team
+    entering <strong>with</strong> a First Round bye and winning it all earns
+    $18 + $36 + $66 + $180 = <strong>$300 (50%)</strong>. A team entering
+    <strong>without</strong> a bye and winning it all earns the same
+    $18 + $36 + $66 + $180 = <strong>$300 (50%)</strong>. A title run is worth half the
+    Prize Pool from either seed; what the bye buys is one fewer game that could end the
+    season.</p>
+  </div>
+
+  <h3>Multiple Winning Teams</h3>
+  <p>Owners receive a payout for <strong>every playoff victory</strong> earned by
+  teams they own. An owner with multiple playoff teams may receive multiple
+  payouts during the same round.</p>
+
+  <h3>Eliminated Teams</h3>
+  <p>Once a playoff team loses, it is eliminated from the tournament. The owner
+  receives all payouts previously earned by that team but earns no additional
+  payouts after elimination. Ownership of the team does not change.</p>
+
+  <h3>End of Season</h3>
+  <p>Following the National Championship Game, all remaining playoff payouts are
+  distributed, the House Account balance becomes $0.00, final league standings are
+  published, and a new season begins with the next preseason draft.</p>
+  <p>Those final standings are decided on Available Funds against Contributions. The teams
+  an owner holds stopped counting toward Portfolio Value on the second buyback date, when
+  the House stopped buying (<a href="#s4">&sect;4</a>, <a href="#s8">&sect;8</a>), and the
+  Battle stake reserve lapsed <em>after</em> that &mdash; with the last conference
+  championship game, because there are no Battles in the postseason
+  (<a href="#s11">&sect;11</a>).</p>
+  <p>Those two fall in that order deliberately, and the stretch between them is a real phase
+  of the season rather than an oversight. Once the House has closed, an owner's teams count
+  nothing and cannot be sold &mdash; but Battles are still being played with them, and the
+  stake reserve is still held back for those Battles. An owner who drops below the reserve in
+  that window cannot sell their way out: they may drop a team or trade one away
+  (<a href="#s11">&sect;11</a>), and otherwise they are committed to the roster they carry
+  into the championships. That is the intent &mdash; the exit closes before the games that
+  decide the playoff field, not after them.</p>
+
+  <h2 id="s13">13. League Commissioner</h2>
+  <p>The Commissioner is responsible for administering the league and ensuring
+  that Sharps Pick 'Em is conducted fairly, consistently, and in accordance with
+  these rules. The Commissioner serves as the league administrator and
+  facilitator, not as a competitor with special privileges.</p>
+
+  <h3>Responsibilities</h3>
+  <p>The required duties are the ones that involve <strong>money moving outside the
+  app</strong>, because only a person can confirm those (&sect;5):</p>
+  <ul>
+    <li>Confirming that a Contribution has actually arrived (&sect;3).</li>
+    <li>Distributing playoff winnings at the end of the season (&sect;12).</li>
+    <li>Manual corrections and exception handling, which are recorded as such.</li>
+  </ul>
+  <p>Alongside those, the Commissioner runs the preseason draft, admits owners to the
+  league (<em>How owners join</em>, below), and sets the league's configuration — the time the market opens, the buy-in,
+  the portfolio limit — within the limits &sect;16 places on when each may change.</p>
+  <h3>How owners join</h3>
+  <p>There are <strong>two routes in, and the Commissioner decides on both.</strong></p>
+  <ol>
+    <li><strong>Invitation.</strong> The Commissioner emails an invite; the person redeems
+    it and sets their own password.</li>
+    <li><strong>Ask to Join.</strong> A Commissioner may choose to make the league
+    <strong>publicly discoverable</strong>. A signed-in user can then find it by name and
+    request a seat. The Commissioner approves or declines that request, and has sole
+    authority to do so &mdash; nobody joins a league without their approval.</li>
+  </ol>
+  <p>Discoverability is <strong>off by default</strong>, and publishes only the league's
+  name, season, Commissioners and number of owners. A league that never switches it on is
+  exactly as private as one that cannot be found at all.</p>
+  <p><strong>Membership locks when the preseason draft is started.</strong> No new owner
+  may join a league from that moment &mdash; by either route. An outstanding invitation
+  cannot be redeemed into that league once the draft has started, and a pending Ask to Join
+  request can no longer be approved.</p>
+  <p>The reason is that everything downstream assumes the roster of owners is settled: &sect;5
+  gives every owner a preseason draft, &sect;16 freezes the competitive rules at the first
+  pick, the buy-in is sized from the number of owners splitting a fixed board (&sect;4), and
+  &sect;12's payouts are shares of a pool everyone else has funded since the preseason.
+  Someone admitted in week 7 has had none of that.</p>
+  <p>Everything else happens on its own and is recorded in the transaction log:
+  Weekly Market Values follow the polls, the market opens the morning after each poll,
+  blind bids resolve at that opening, purchases and sales and trades and
+  Battles are processed automatically, the House Account balance is the sum of its
+  entries, and playoff payouts are calculated from the bracket. The Commissioner does
+  not perform these and cannot decide them.</p>
+
+  <h3>Rule Enforcement</h3>
+  <p>The Commissioner is responsible for enforcing the rules exactly as written.
+  All owners are expected to comply with league rules and deadlines. The
+  Commissioner may reject or reverse any transaction that violates the Official
+  Rules — for example illegal portfolio sizes, late transaction requests, invalid
+  blind bids, trades involving teams not owned by the seller, or duplicate and
+  conflicting transactions.</p>
+
+  <h3>Rule Interpretation</h3>
+  <p>Situations not explicitly covered by these Official Rules shall be resolved
+  by the Commissioner using the principles and intent of the game. When making a
+  ruling, the Commissioner shall prioritize competitive fairness, consistency with
+  existing rules, and the long-term integrity of the league. Any interpretation
+  shall apply equally to all owners.</p>
+
+  <h3>Errors and Corrections</h3>
+  <p>The Commissioner may correct clerical or administrative errors, including
+  recording mistakes, incorrect Market Values, mathematical errors, transaction
+  processing mistakes, and payout calculation errors. Corrections should be made
+  as soon as reasonably possible after the error is discovered. The Commissioner
+  may not alter the outcome of completed games or retroactively change league
+  rules.</p>
+  <p>A correction to an owner's Available Funds is an <strong>Adjustment</strong>: it
+  carries a stated reason, it appears on that owner's funds record, and it is never
+  edited afterwards. An Adjustment moves the balance and therefore the Portfolio Value,
+  but it is not something the owner played for &mdash; so Alpha subtracts it exactly as it
+  subtracts a Contribution (&sect;4), and no correction can move an owner up or down the
+  standings.</p>
+
+  <h3>Commissioner Participation</h3>
+  <p>The Commissioner may participate in the league as an owner. While
+  participating, the Commissioner is subject to the same rules, deadlines, fees,
+  and restrictions as every other owner. The Commissioner may not use
+  administrative authority to gain a competitive advantage.</p>
+
+  <h3>Conflicts of Interest</h3>
+  <p>If the Commissioner is directly involved in a dispute or transaction that
+  could reasonably present a conflict of interest, the Commissioner should
+  disclose the conflict to the league. The Commissioner may appoint a temporary
+  co-commissioner or obtain approval from a majority of the remaining owners to
+  resolve the matter.</p>
+
+  <h3>Discussion Threads &amp; Moderation</h3>
+  <p>Every Battle, every trade, and the draft carries a discussion thread &mdash; the
+  Battle Board, the Trade Talk, and the Draft Chat. <strong>All of them are
+  league-wide.</strong> Any owner may read and participate in any thread, and the
+  Commissioner has exactly the same visibility every other owner has &mdash; no more.
+  There are no private trade negotiations inside the app; owners who wish to negotiate
+  privately may do so through any channel outside it.</p>
+  <p>The Commissioner may moderate any thread by <strong>removing</strong> a comment that
+  violates these rules or the league's standards of conduct. A removed comment leaves a
+  visible placeholder in its place, so that moderation is apparent to the league rather
+  than silent. The Commissioner may <strong>never edit</strong> another owner's comment;
+  the only action available on another owner's words is to remove them.</p>
+
+  <h3>Final Authority</h3>
+  <p>Except where otherwise provided by these Official Rules, the Commissioner's
+  decisions regarding league administration, transaction processing, and rule
+  interpretation are final.</p>
+
+  <h2 id="s14">14. Examples of Play</h2>
+  <p>The following examples illustrate how the rules operate in common situations.
+  These examples are for explanatory purposes only and do not modify or supersede
+  any Official Rule.</p>
+
+  
+  
+  
+  <div class="example">
+    <h4>Example 1: Selling to the House</h4>
+    <p>Oregon currently has a Market Value of $18. Spencer decides to sell Oregon
+    back to the House. He receives <strong>$18.00</strong>, Oregon becomes unowned,
+    and the House Account falls by $18.00.</p>
+    <p>What the House will buy <strong>narrows twice and then stops</strong>, on two dates
+    the Commissioner published before the draft (&sect;8). Until the first of them it takes
+    any team in the Top 25; after it, only teams ranked 1&ndash;12; and from the second,
+    nothing at all. So Oregon at #14 could be sold the day before the first date and not the
+    day after, at the same $18.00 &mdash; the price did not move, the buyer left.</p>
+  </div>
+
+  <div class="example">
+    <h4>Example 2: Owner-to-Owner Trade</h4>
+    <p>Jason owns Alabama. Spencer wants to acquire Alabama. They agree to Alabama
+    for $32. Jason proposes the trade, Spencer confirms it, and it settles the moment
+    he does — nobody approves it. Spencer pays Jason $32 directly, and
+    because this is an owner-to-owner transaction the House Account does
+    <strong>not</strong> change.</p>
+  </div>
+
+  <div class="example">
+    <h4>Example 3: A Battle</h4>
+    <p>Suppose the portfolios are as follows:</p>
+    <table>
+      <thead><tr><th>Owner A</th><th>Owner B</th></tr></thead>
+      <tbody>
+        <tr><td>#3 Notre Dame</td><td>#5 Ohio State</td></tr>
+        <tr><td>#11 LSU</td><td>#10 Ole Miss</td></tr>
+        <tr><td>#20 Kansas State</td><td>#21 Florida</td></tr>
+        <tr><td><em>open roster spot</em></td><td>Ohio University</td></tr>
+        <tr><td><em>open roster spot</em></td><td><em>open roster spot</em></td></tr>
+      </tbody>
+    </table>
+    <p>Florida is scheduled to play Florida State next week. Owner A is bearish on
+    Florida and believes Florida State will cover the spread. Florida State is
+    currently unowned and <strong>unranked</strong>, so Owner A adds it for free. Florida
+    State does not play for another four days, so it is available and the addition takes
+    effect immediately.</p>
+    <p>Because Owner B owns Florida and Owner A now owns Florida State, the two
+    owners are <strong>automatically matched in a Battle</strong> for that game — no
+    proposal or acceptance is required.</p>
+    <p>If Florida State covers the spread:</p>
+    <ul>
+      <li>Owner A wins the Battle and receives the pot less the House Fee &mdash; on
+      the standard $5 stake, that is $10 in, $1.00 to the House Account and
+      <strong>$9.00 to Owner A</strong>.</li>
+      <li>Owner A keeps Florida State, which cost nothing and takes on a Market Value
+      the moment it enters the Top 25 — this is exactly the behaviour free unranked
+      teams are meant to encourage (&sect;5).</li>
+      <li>The House Fee increases the overall prize pool for every owner.</li>
+    </ul>
+    <p>Had the two owners agreed before kickoff to raise the stake to $20 each, the
+    pot would be $40: $4.00 to the House Account and $36.00 to the winner.</p>
+  </div>
+
+  
+  <div class="example">
+    <h4>Example 4: College Football Playoff Payouts</h4>
+    <p>The Prize Pool is $600 when the playoff begins and every winning team is owned.
+    Texas enters without a First Round bye and wins the National Championship, earning
+    3% ($18) First Round + 6% ($36) Quarterfinal + 11% ($66) Semifinal + 30% ($180)
+    Championship = <strong>$300</strong>, or 50% of the Prize Pool.</p>
+    <p>If Oregon enters with a First Round bye and wins the National Championship,
+    its owner earns 3% ($18) bye + 6% ($36) + 11% ($66) + 30% ($180) =
+    <strong>$300</strong> — the same 50%. The bye pays what a First Round win pays;
+    what it saves Oregon is a game they could have lost.</p>
+    <p>Had one of the First Round winners been House-owned, its 3% would not have been
+    paid to anyone; it would have been added to the rounds still to come (&sect;10), and
+    every later payout above would be slightly larger.</p>
+  </div>
+
+  <div class="example">
+    <h4>Example 5: A Complete Season</h4>
+    <p>Spencer drafts Texas ($26), Penn State ($20), Ole Miss ($15), Tulane (free),
+    and Boise State (free) — a total draft investment of <strong>$61</strong>.
+    The two unranked teams cost nothing, and Boise State is later traded for $12
+    having been acquired for $0.</p>
+    <p>During the season Spencer sells Ole Miss to the House. Its Market Value has
+    risen to $19, so Spencer nets <strong>$19.00</strong>. He also wins Louisville
+    for $8 on a blind bid, trades Boise State to Jason for $12, wins a $20 Battle
+    against Mark, sees Texas win the National Championship, and sees Penn State reach
+    the Semifinals.</p>
+    <p>By the end of the season, Spencer has earned money through strategic
+    drafting, buying, selling, trading, Battles, and playoff success. This example
+    illustrates that success in Sharps Pick 'Em is driven by active portfolio
+    management throughout the season, not simply by drafting the best teams.</p>
+  </div>
+
+  <h2 id="s15">15. Definitions</h2>
+  <p>The following terms have the meanings set forth below whenever they appear in
+  these Official Rules.</p>
+
+  <h3>Battle</h3>
+  <p>A wager between the two owners of the teams in a game. It appears when both teams are
+  owned and <strong>binds 30 minutes before kickoff</strong>, when the line freezes; from that
+  moment it is mandatory. Before it binds either owner may give the team up and the matchup
+  dissolves. See <a href="#s11">&sect;11</a>, which is where every Battle rule lives.</p>
+
+  <h3>Blind Bid</h3>
+  <p>A confidential offer to purchase an unowned team that is not currently available.
+  Bids for the same team are opened together at the next market opening, and the highest
+  valid bid wins.</p>
+
+  <h3>College Football Playoff (CFP)</h3>
+  <p>The official postseason tournament recognized by these rules. Playoff payouts
+  are awarded based on victories achieved during the College Football Playoff.</p>
+
+  <h3>Commissioner</h3>
+  <p>The individual responsible for administering a league: confirming Contributions,
+  distributing College Football Playoff winnings, running the preseason draft, and
+  handling corrections. Transactions are processed and recorded automatically
+  (&sect;13).</p>
+
+  <h3>House</h3>
+  <p>The neutral entity that owns every team not currently owned by an owner. The
+  House buys and sells teams according to the Official Rules but does not compete
+  in the league.</p>
+
+  <h3>House Account</h3>
+  <p>The central prize pool that receives money from draft purchases, purchases
+  from the House, blind bids, and any other payments required
+  by these Official Rules. The entire House Account is distributed during the
+  College Football Playoff.</p>
+
+  <h3>Market Value</h3>
+  <p>The official purchase and sale price of a team, derived from its rank in the
+  current poll using the schedule in &sect;3. It is computed, not assigned: an unranked
+  team's Market Value is $0.00.</p>
+
+  <h3>Game-locked</h3>
+  <p>A team is untouchable from 30 minutes before its kickoff until that game is
+  officially final. See <a href="#s6">&sect;6</a>. It applies all season including the
+  playoff. A trade is stopped by this and by a <strong>live Battle</strong> (&sect;11), but
+  not by the pricing rule &mdash; &sect;9 sets its own price.</p>
+
+  <h3>Available</h3>
+  <p>A team may be acted on <em>with the House</em> &mdash; bought, sold, added or
+  dropped. Its last result has been priced by the current poll, it is not game-locked,
+  and it carries no live Battle. See <a href="#s6">&sect;6</a>, which is where the
+  rule lives. An action on an available team happens immediately; an action on an
+  unavailable one is queued to the next market opening.</p>
+
+  <h3>Available Funds</h3>
+  <p>An owner's spendable cash balance. It funds draft picks, purchases from the House,
+  blind bids, trade payments and Battle stakes. It grows when the Commissioner confirms a
+  Contribution (<a href="#s3">&sect;3</a>), and by an Adjustment the Commissioner records
+  against it (<a href="#s13">&sect;13</a>). Owners' screens label it
+  <strong>Cash</strong>; the two are the same balance.</p>
+
+  <h3>Alpha</h3>
+  <p>An owner's Portfolio Value less everything that has been put into their account &mdash;
+  every Contribution they have made, and any Adjustment the Commissioner has recorded. It
+  removes the effect of simply putting more money in during the season, so it measures who has
+  <em>played</em> best rather than who has paid in most. It determines the league
+  standings and the league champion (<a href="#s4">&sect;4</a>).</p>
+
+  <h3>Adjustment</h3>
+  <p>A correction the Commissioner makes by hand to an owner's Available Funds, with a stated
+  reason, recorded on that owner's funds record (<a href="#s13">&sect;13</a>). It is not a
+  Contribution and it is not performance: Alpha subtracts it, so an Adjustment never moves an
+  owner up or down the standings.</p>
+
+  <h3>Contribution</h3>
+  <p>Money an owner sends the Commissioner off-platform. It becomes Available Funds only
+  when the Commissioner confirms receipt (<a href="#s3">&sect;3</a>); until then it is a
+  request and buys nothing.</p>
+
+  <h3>Margin Call</h3>
+  <p>The state of an owner whose Available Funds no longer cover the Battle stake reserve
+  their Portfolio requires (<a href="#s11">&sect;11</a>). Nothing is sold or dropped on
+  their behalf; they simply may not increase their exposure until they are back over the
+  line.</p>
+
+  <h3>Market Opening</h3>
+  <p>The moment, the morning after a new poll is applied, at which every team is
+  re-priced and everything queued since the previous opening is settled in one
+  pass.</p>
+
+  <h3>Owner</h3>
+  <p>A participant in the league who may buy, sell, trade, and own college
+  football teams.</p>
+
+  <h3>Playoff Prize Pool</h3>
+  <p>Another name for the House Account after the College Football Playoff field
+  has been finalized. Once the playoff begins, the House Account exists solely for
+  distributing playoff payouts.</p>
+
+  <h3>Portfolio</h3>
+  <p>The complete collection of teams currently owned by an owner. Owners may
+  never exceed the maximum portfolio size established by these Official Rules.</p>
+
+  <h3>Portfolio Value</h3>
+  <p>An owner's Available Funds plus what the House would pay for every team in their
+  Portfolio (<a href="#s8">&sect;8</a>) &mdash; which is a team's Market Value until the
+  House stops buying it, and nothing after. It is shown on the standings but does not
+  decide them, because it counts Contributions as well as gains
+  (<a href="#s4">&sect;4</a>).</p>
+
+  <h3>Snake Draft</h3>
+  <p>The preseason draft format in which the draft order reverses after each round.</p>
+
+  <h3>Team</h3>
+  <p>Any NCAA Division I FBS football program eligible for ownership under these
+  Official Rules.</p>
+
+  <h3>Trade</h3>
+  <p>An agreement between <strong>two</strong> owners, moving at most one team each way
+  plus cash (<a href="#s9">&sect;9</a>). Trades occur directly between the two owners and
+  never touch the House Account.</p>
+
+  <h3>Transaction</h3>
+  <p>Any action that changes ownership of a team or affects the House Account,
+  including purchases, sales, trades, blind bids, and Battle entry fees.</p>
+
+  <h3>Weekly Market Value</h3>
+  <p>Not a separate figure &mdash; the same <a href="#s15">Market Value</a>, spoken of
+  across the season, because a new poll re-prices every team each week. There is one
+  price for a team at any moment and it comes from the current poll.</p>
+
+  <h3>Winning Bid</h3>
+  <p>The highest valid blind bid for an unowned team at a market opening. The winning
+  bidder purchases the team for the amount of the submitted bid.</p>
+
+  <h3>Final Note</h3>
+  <p>Unless otherwise specified, words used in the singular include the plural, and
+  words used in the plural include the singular whenever the context requires. In
+  the event of any conflict between a definition contained in this section and
+  another provision of these Official Rules, the more specific rule shall govern.</p>
+
+  <h2 id="s16">16. Adoption &amp; Amendments</h2>
+
+  <h3>Status of This Document</h3>
+  <p>These rules are <strong>adopted</strong>. They became Version 1.0 on
+  <strong>22 August 2026</strong>, when the preseason draft of the first league began &mdash;
+  the moment this section had always named. Anywhere a rule is genuinely undecided it is
+  listed under <em>Open Questions</em> below rather than left for an owner to discover
+  mid-season; nothing is open at present.</p>
+  <p>From that moment the amendment procedure below applies and every change is recorded in
+  the version history at the end of this section. The competitive rules of a season are fixed
+  once its draft starts, so a rule that changes how money moves cannot be changed again until
+  the season is over.</p>
+
+  <h3>Rulebook Amendments</h3>
+  <p>Once adopted, these Official Rules govern all aspects of Sharps Pick 'Em. No
+  verbal agreement, text message, email, social media post, or prior custom shall
+  supersede these Official Rules unless formally adopted as an official amendment.</p>
+  <p>Except as otherwise provided in these rules, amendments may only be made
+  <strong>between seasons</strong>. Once the preseason draft begins, the Official
+  Rules shall remain in effect for the entirety of that season. Any amendment
+  shall apply equally to all owners and shall not retroactively alter completed
+  drafts, transactions, Battles, or College Football Playoff payouts. The League
+  Commissioner is responsible for publishing all approved amendments prior to the
+  start of each new season.</p>
+
+  <h3>Open Questions</h3>
+  <p>Where this rulebook is unsettled &mdash; because it contradicts itself, or because the
+  app does something it never described &mdash; the question is listed here until the
+  Commissioner rules on it, so owners can see what is undecided rather than discovering it
+  mid-season.</p>
+  <p><strong>Nothing is open.</strong> Every question raised so far has been ruled on and
+  written into the sections above. A rule that is genuinely undecided is published here
+  before the season it would affect; while this list is empty, the rules as written are the
+  rules as they stand.</p>
+
+  <h3>Version History</h3>
+  <p>Every change to these rules from adoption onward is recorded here, newest first. Before
+  adoption there was nothing to record: editing an unadopted draft is not an amendment, which
+  is why this history begins where it does rather than covering the drafting.</p>
+  <table>
+    <thead><tr><th>Version</th><th>Date</th><th>Change</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1.1</td>
+        <td>15 October 2026</td>
+        <td>&sect;8: a team given up to make room for an acquisition is sold to the House at
+        Market Value whenever the House would buy it, and dropped for $0.00 only otherwise.
+        Version 1.0 described it as a drop, which was never the Commissioner's intention; it
+        grants no new power, since an owner could always sell first and then acquire. Made
+        mid-season as a correction, and applied to the one transaction the earlier text had
+        decided (12 October 2026), as an exception to the rule against amending a season in
+        progress or altering a completed transaction.</td>
+      </tr>
+      <tr>
+        <td>1.0</td>
+        <td>22 August 2026</td>
+        <td>Adopted, on the first pick of the first league's preseason draft &mdash; the
+        moment named in <em>Status of This Document</em> above. The text as it stood at that
+        moment is Version 1.0; the competitive rules are fixed for the 2026 season.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Closing Statement</h3>
+  <p>Sharps Pick 'Em is designed to combine the strategy of investing, the
+  excitement of college football, and the competition of a fantasy league into a
+  unique ownership experience. Success is earned through careful drafting,
+  disciplined portfolio management, timely transactions, and identifying teams
+  capable of making deep postseason runs.</p>
+  <p>Compete fairly, respect your fellow owners, and enjoy the season.</p>
+
+  <p style="color:var(--chalk-dim); font-size:13px; margin-top:40px; border-top:1px solid var(--stripe); padding-top:16px;">
+    Sharps Pick 'Em Official Rules · Version 1.1, adopted 22 August 2026, amended 15 October 2026 ·
+    &copy; 2026 Spencer Plassman. All rights reserved.
+  </p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+/* <pp-orders> — uses the global .panel/.list-item styles. */
+.orders {
+  display: block;
+
+  & .amt { font-family: var(--mono); color: var(--brass); }
+  & .actions { margin-top: 6px; }
+  /* A conditional drop is a qualifier on the order, not a state of it — softer than
+     the status tags so it does not read as "this is what happened". */
+  & .tag.house { margin-left: 6px; }
+}

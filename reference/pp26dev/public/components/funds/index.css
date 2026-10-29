@@ -1,0 +1,113 @@
+/* <pp-funds> — styles nested from the .funds root class, using :root tokens.
+   WHAT CAN I SPEND RIGHT NOW, which is a different question from what
+   <pp-portfolio-summary> answers beside it. It borrows that panel's .headline grammar so
+   the two read as siblings, and the notice reuses the global .disclaimer. It used to be
+   four .card tiles; they wrapped to a cramped 2x2 in the 1fr column this panel lives in,
+   and led with Cash — a figure the portfolio panel had already given, in the same shape. */
+.funds {
+  display: block;
+
+  /* The hero is Free to Spend, in <pp-portfolio-summary>'s .headline grammar so the two
+     panels above the fold read as siblings rather than as two of the same thing. Brass is
+     already the app's colour for money you may actually use, which is exactly this figure. */
+  & .headline {
+    text-align: center;
+    padding: 2px 0 14px;
+    border-bottom: 1px solid var(--stripe);
+
+    & .hl-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--chalk-dim);
+    }
+    & .hl-value {
+      font-size: clamp(28px, 6vw, 38px);
+      line-height: 1.1;
+      color: var(--brass);
+      margin: 2px 0 0;
+    }
+  }
+
+  /* …and what it was subtracted from. Rows rather than tiles: this panel lives in the 1fr
+     column, where four tiles wrap to a cramped 2x2. Children stay span/b — the global
+     `.row > div { flex: 1 }` would capture divs. */
+  & .breakdown {
+    padding: 12px 0 2px;
+
+    /* A GRID, NOT A FLEX ROW. These labels are long — "− Held for Battle stakes" plus an
+       ⓘ — and this panel lives in the 1fr column, so the label wraps. Under
+       `justify-content: space-between` with `align-items: baseline` the amount stayed on
+       the FIRST line of a two-line label and drifted away from the row it belongs to.
+       Two columns pin the figure to the right whatever the label does, and the derivation
+       gets a row of its own underneath instead of being crammed into the label. */
+    & .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: baseline;
+      gap: 2px 12px;
+      padding: 6px 0;
+    }
+    & .label {
+      font-size: 13px;
+      color: var(--chalk-dim);
+      display: inline-flex;
+      align-items: center;
+      gap: 0 4px;
+      min-width: 0;
+    }
+    & .amount { font-size: 16px; white-space: nowrap; text-align: right; }
+    & .why { grid-column: 1 / -1; }
+
+    /* A deduction has not left the account — dim, never coloured like a debit. */
+    & .row.less .amount { color: var(--chalk-dim); }
+    /* Nothing deducted is still worth stating, quietly: it is why Free equals Cash.
+       Dimmed by COLOUR rather than `opacity` — opacity composites the subtree, and these
+       labels carry an ⓘ whose balloon is a child of them, so it opened faded too. The ⓘ
+       keeps full contrast: it is a live control, not a disabled one.
+       THE REASON LINE GOES WITH THEM. `.why` sets its own colour below, so a row left out
+       of this list keeps a full-contrast explanation under a faded figure — which reads as
+       the emphasis being on the sentence rather than on the row being satisfied. */
+    & .row.zero .label, & .row.zero .amount, & .row.zero .why {
+      color: color-mix(in srgb, var(--chalk-dim) 55%, transparent);
+    }
+
+    /* How the figure was arrived at, beside the label it belongs to. */
+    & .why { font-size: 0.7rem; line-height: 1.25; color: var(--chalk-dim); }
+  }
+
+  & .committed-note { margin-top: 10px; }
+
+  /* The buy-in is in: one tick beside the heading, in the same green the app already
+     uses for "open". It replaces a full tile that carried a sentence in every state,
+     including the state with nothing to report. */
+  & h2 .ok {
+    color: var(--up);
+    font-size: 0.8em;
+    margin-left: 0.25rem;
+  }
+
+  /* …and when it is NOT in, it gets a line, because that is why the Cash above reads
+     $0.00 and it is the one thing on this panel an owner can act on. */
+  & .note.status {
+    margin-top: 10px;
+    color: var(--brass);
+  }
+
+  & .acts { margin-top: 12px; }
+  & .acts .cancel { float: right; }
+  & .acts p { margin-top: 10px; }
+
+  & details { margin-top: 10px; }
+
+  & .ledger .amt { float: right; font-family: var(--mono); }
+  & .ledger .amt.pos { color: var(--brass); }
+  & .ledger .amt.neg { color: var(--chalk); }
+}
+
+/* The date is what makes a ledger line reconcilable against a real payment. */
+.funds .ledger .when {
+  font-size: 12px;
+  color: var(--chalk-dim);
+  margin-right: 6px;
+}

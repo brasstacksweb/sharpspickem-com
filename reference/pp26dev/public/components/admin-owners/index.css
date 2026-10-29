@@ -1,0 +1,7 @@
+/* <pp-admin-owners> — uses global .panel/.row/table/.dialog, and `tr.pending` from style.css
+   for the invited rows; this styles the roster's action column. */
+.admin-owners {
+  display: block;
+
+  & .acts { white-space: nowrap; text-align: right; }
+}

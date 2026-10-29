@@ -1,0 +1,78 @@
+/* <pp-season> — a progress bar with the season's milestones on it, nested from .season.
+
+   NO PANEL. It sits between the ticker and the dashboard grid as a strip, because the panel
+   chrome — border, header, sub-line — was most of what made the first version too heavy for
+   what is, in the end, four words and a bar. */
+.season {
+  display: block;
+  margin: 0 0 4px;
+
+  & .steps {
+    list-style: none;
+    margin: 0;
+    padding: 14px 22px 12px;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    position: relative;
+  }
+
+  /* The rail, and the fill over it. Both sit on the row of dots — `top` matches the dot's
+     centre, which is padding + half the dot. */
+  & .steps::before,
+  & .steps::after {
+    content: '';
+    position: absolute;
+    top: calc(14px + 5px);
+    height: 2px;
+    /* Start and end at the first and last DOT, not at the edge of the strip, so the rail
+       does not run out past the milestones it connects. */
+    left: calc(22px + (100% - 44px) / 8);
+    right: calc(22px + (100% - 44px) / 8);
+  }
+  & .steps::before { background: var(--line); }
+  & .steps::after {
+    right: auto;
+    width: calc((100% - 44px) / 4 * 3 * var(--fill, 0%) / 100%);
+    background: var(--brass);
+  }
+
+  & li {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+  }
+
+  & .dot {
+    width: 10px; height: 10px;
+    border: 2px solid var(--line);
+    background: var(--field);
+  }
+  & li.done .dot { background: var(--brass); border-color: var(--brass); }
+  & li.next .dot { border-color: var(--brass); box-shadow: 0 0 0 3px rgba(217, 165, 63, .18); }
+
+  & .name {
+    font-size: 11px;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: var(--chalk-dim);
+    text-align: center;
+    line-height: 1.3;
+  }
+  & li.done .name { color: var(--chalk); }
+  & li.next .name { color: var(--brass); }
+
+  /* The label is what wraps on a narrow screen; the bar itself stays horizontal, because
+     four dots fit on a phone and a stacked progress bar is not a progress bar. */
+  @media (max-width: 560px) {
+    & .steps { padding-left: 12px; padding-right: 12px; }
+    & .steps::before,
+    & .steps::after { left: calc(12px + (100% - 24px) / 8); }
+    & .steps::before { right: calc(12px + (100% - 24px) / 8); }
+    & .steps::after { width: calc((100% - 24px) / 4 * 3 * var(--fill, 0%) / 100%); }
+    & .name { font-size: 10px; letter-spacing: .2px; }
+  }
+}

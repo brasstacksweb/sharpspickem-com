@@ -1,0 +1,11 @@
+/* <pp-site-users> — uses the global .panel/table/.dialog styles, and `tr.pending` from
+   style.css for the invited rows. */
+.site-users {
+  & td.acts { text-align: right; white-space: nowrap; }
+
+  /* A closed account shares the invited row's dimming but not its name — it is finished,
+     not on its way in, and `pending` now means the latter everywhere. */
+  & tr.closed > td { opacity: .72; }
+
+  & .tag { margin-left: var(--sp-1); }
+}

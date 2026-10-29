@@ -1,0 +1,156 @@
+/* <pp-portfolio-summary> — a brokerage statement, not a scoreboard and not a tutorial.
+   The hierarchy IS the design: one headline number, the sum that composes it, then two
+   columns — what you own, and how you got it. Explanation lives in `.info` tooltips
+   (assets/style.css), so this file styles figures and nothing else. */
+.portfolio-summary {
+  display: block;
+
+  & .headline {
+    text-align: center;
+    padding: 4px 0 16px;
+    border-bottom: 1px solid var(--stripe);
+
+    & .hl-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--chalk-dim);
+    }
+    & .hl-value {
+      font-size: clamp(30px, 7vw, 44px);
+      line-height: 1.1;
+      color: var(--brass);
+      margin: 2px 0 4px;
+    }
+    /* Spencer's composition line: the headline is a sum and it should show its working. */
+    & .hl-parts { font-size: 13px; color: var(--chalk-dim); }
+    & .hl-parts b { color: var(--chalk); }
+    & .hl-change { font-size: 13px; margin-top: 4px; }
+  }
+
+  /* §8 holding value back. A standing fact while it applies, not an alert — ordinary note
+     styling rather than anything that reads as a warning, because nothing is wrong. */
+  & .note { font-size: 12.5px; margin: 12px 0 0; line-height: 1.5; }
+
+  /* PERFORMANCE, alone. "What do I own" is the headline and the composition line under it;
+     this column answers the other question. There were two columns while Assets had rows to
+     carry, and the moment it did not the panel read as a column that failed to load. One
+     group stretches, which is what a list of four figures wants anyway. */
+  & .groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    padding: 14px 0 4px;
+
+    & .group { flex: 1 1 240px; min-width: 0; }
+
+    & h3 {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--chalk-dim);
+      margin: 0 0 6px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid var(--stripe);
+    }
+
+    /* The baseline Alpha is measured against, on the heading rather than as a row of its
+       own: it is the thing the column is compared TO, not another figure in it. */
+    & h3 .baseline {
+      letter-spacing: 0;
+      text-transform: none;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0 4px;
+      white-space: nowrap;
+    }
+
+    /* Two columns rather than a flex row with space-between: these labels are long
+       ("Team Appreciation" plus an ⓘ) and the column is 240px at its narrowest, so the
+       label wraps — and a baseline-aligned amount then stays on the label's FIRST line
+       and drifts away from the row it belongs to. A grid pins the figure right whatever
+       the label does. */
+    & .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: baseline;
+      gap: 2px 12px;
+      padding: 7px 0;
+
+      & .label {
+        font-size: 13px;
+        color: var(--chalk-dim);
+        display: inline-flex;
+        align-items: center;
+        gap: 0 4px;
+        min-width: 0;
+      }
+      & .amount { font-size: 16px; white-space: nowrap; text-align: right; }
+    }
+
+    /* Alpha answers "how am I doing", so it is larger than the three that explain it — the
+       same reason the headline is larger than this. */
+    & .row.lead .amount { font-size: 20px; }
+    & .row.lead .label { color: var(--chalk); }
+
+    /* "Put in" is a baseline rather than a holding; present but quieter. */
+    & .row.sub { border-top: 1px solid var(--stripe); }
+    & .row.sub .label, & .row.sub .amount { color: var(--chalk-dim); }
+
+    /* A figure at $0.00 has not happened yet. Dimmed rather than dropped, so the panel
+       keeps the shape an owner has learned and two owners stay comparable — a row that
+       vanishes moves every row beneath it.
+
+       DIM BY COLOUR, NEVER BY `opacity`. Opacity composites the whole subtree, and every
+       label here carries an ⓘ whose balloon is a positioned child of it: the explanation
+       opened faded at the exact moment someone asked to read it, and a dimmed row is
+       precisely the row whose explanation is worth most. The alpha lands on the text and
+       stops there. The ⓘ itself keeps full contrast on purpose — it is a live control,
+       and greying a control that still works says the wrong thing (see `gate_tag()`). */
+    & .row.zero .label, & .row.zero .amount {
+      color: color-mix(in srgb, var(--chalk-dim) 65%, transparent);
+    }
+  }
+
+  & .up { color: var(--green, #6fcf7f); }
+  & .down { color: var(--red); }
+  & .flat { color: var(--chalk-dim); }
+}
+
+/* Portfolio over time. Inline SVG, stretched to the panel width — the shape is the point,
+   not precise pixel values, which the figures above it already give. */
+.portfolio-summary .chart {
+  padding: 12px 0 2px;
+  border-top: 1px solid var(--stripe);
+  margin-top: 10px;
+
+  & .chart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--chalk-dim);
+    margin-bottom: 6px;
+  }
+  & .chart-head .label { display: inline-flex; align-items: center; }
+
+  & svg {
+    display: block;
+    width: 100%;
+    height: 64px;
+  }
+  & .stroke { fill: none; stroke: var(--brass); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+  & .fill { fill: color-mix(in srgb, var(--brass) 14%, transparent); stroke: none; }
+
+  &.up .stroke { stroke: var(--green, #6fcf7f); }
+  &.up .fill { fill: color-mix(in srgb, var(--green, #6fcf7f) 14%, transparent); }
+  &.down .stroke { stroke: var(--red); }
+  &.down .fill { fill: color-mix(in srgb, var(--red) 14%, transparent); }
+}

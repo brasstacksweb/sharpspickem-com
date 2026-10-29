@@ -1,0 +1,76 @@
+/* <pp-playoffs> — the bracket, nested from the .playoffs root class. */
+.playoffs {
+  display: block;
+
+  /* The three figures every share below is measured against. Wraps rather than shrinking:
+     money is mono and must not be allowed to compress. */
+  & .pool .figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    margin-bottom: 10px;
+
+    & .k {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--chalk-dim);
+    }
+    & b { font-size: 18px; }
+  }
+  & .pool p { margin: 0; }
+
+  /* The same row shape <pp-schedule> uses for a game, so the two pages read as one app.
+     Not shared code: that one carries a line, a freeze state and what the game means to
+     this league, none of which exists in the postseason (§11 puts no Battles here). */
+  & .game {
+    & .top {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+    }
+    & .when {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--chalk-dim);
+      min-width: 8.5rem;
+    }
+    & .teams { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    & .at { color: var(--chalk-dim); font-size: 12px; }
+    & .score { margin-left: auto; font-family: var(--mono); font-size: 15px; }
+  }
+
+  /* A side is the team and who it belongs to, stacked so a long owner name never pushes
+     the score off the row. */
+  & .side {
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1.25;
+
+    /* The winner, and the only colour on the row: everything else here is history. */
+    &.won b { color: var(--up); }
+
+    & .who {
+      font-size: 11px;
+      color: var(--chalk-dim);
+    }
+    /* PAID is not the same claim as HOLDS, so it does not look the same. Brass is the
+       app's colour for money that has moved. */
+    & .who.paid { color: var(--brass); }
+    & .who.forfeited { color: var(--chalk-dim); font-style: italic; }
+    & .who.none { color: var(--chalk-dim); opacity: 0.7; }
+  }
+
+  & .means {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--chalk-dim);
+
+    & .pays { color: var(--brass); margin-left: 6px; }
+  }
+
+  & .game .top .pays { margin-left: auto; color: var(--brass); font-size: 15px; }
+}

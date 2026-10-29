@@ -1,0 +1,17 @@
+/* <pp-battles> — styles nested from the .battles root class. */
+.battles {
+  display: block;
+
+  & .amt { font-family: var(--mono); color: var(--brass); }
+
+  /* The provisional line, styled the way the battle log styles the settled one, so the
+     same number does not look like two different things on two screens. */
+  & .mono { font-family: var(--mono); color: var(--chalk); }
+  & .src {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--chalk-dim);
+    margin-left: 4px;
+  }
+}

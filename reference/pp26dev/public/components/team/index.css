@@ -1,0 +1,35 @@
+/* <pp-team> — styles nested from the .team root class. */
+.team {
+  display: grid;
+  gap: var(--sp-4);
+
+  /* A grid item will not shrink below its content by default, so the unwrapped game tables
+     would size each panel, and the page, instead of scrolling inside .table-wrap. */
+  & > * { min-width: 0; }
+
+  & .overview .body { display: flex; align-items: center; gap: var(--sp-4); }
+  & .crest { width: 72px; height: 72px; flex: none; }
+
+  & .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--sp-3) var(--sp-4);
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+  }
+
+  & .facts dt { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--chalk-dim); }
+  & .facts dd { margin: var(--sp-1) 0 0; overflow-wrap: anywhere; }
+
+  & table.games td { white-space: nowrap; }
+  & .vs { display: inline-block; min-width: 2ch; color: var(--chalk-dim); }
+  & .res.W { color: var(--up); }
+  & .res.L { color: var(--red); }
+
+  @media (max-width: 560px) {
+    & .overview .body { flex-direction: column; align-items: flex-start; }
+    & .crest { width: 56px; height: 56px; }
+    & .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  }
+}

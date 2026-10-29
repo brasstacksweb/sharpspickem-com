@@ -1,0 +1,41 @@
+/* <pp-impersonating> — one fixed line along the top, wherever an admin is viewing as
+   somebody else.
+ *
+ * z-index 46 sits with the dev bar (45) in the documented ladder — above the topbar and
+ * tooltips, below toasts and the loading bar, so nothing it says is ever hidden and it never
+ * hides an error. At the TOP rather than the bottom: the topbar is position:relative, so a
+ * banner in flow would scroll away, and this is the one strip that must not. */
+.impersonating {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--field);
+  background: var(--brass);
+  border-bottom: 3px solid var(--field);
+
+  & .env { font-weight: 700; letter-spacing: 2px; }
+  & .who b { font-weight: 700; }
+  & .real { margin-left: auto; opacity: .8; }
+  & button { flex: 0 0 auto; }
+}
+
+/* Production reads as a warning rather than a status. */
+.impersonating.live {
+  background: var(--red);
+  color: var(--chalk);
+}
+
+/* The bar moved the ceiling, so the bar is what lifts the page off it — the mirror of
+   body.devtime's padding-bottom. Scoped to the class, so nothing moves when nobody is
+   impersonating. */
+body.impersonating-on {
+  padding-top: 34px;
+}

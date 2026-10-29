@@ -1,0 +1,18 @@
+/* <pp-admin-rankings> — the weekly rank-entry grid (moved here from the global
+   sheet; only this component uses it). Global .panel/.row supply the rest. */
+.admin-rankings {
+  display: block;
+
+  & .sync-note { margin-top: 8px; }
+
+  & .rankings-grid {
+    margin-top: 14px;
+
+    & td:first-child { width: 45%; }
+    & td input { padding: 4px 6px; font-family: var(--mono); font-size: 13px; }
+    & td input[type="checkbox"] { width: auto; }
+  }
+}
+
+/* The Teams panel shares this tab with the rankings grid. */
+.admin-rankings .sync-row { margin: 10px 0 4px; }

@@ -1,0 +1,353 @@
+/* <pp-topbar> — three rows: the brand and you, the league right now, where to go.
+   The global .topbar rule supplies the marquee look (scanline, brass rail, hard
+   shadow); this stacks the rows and lays out each one. */
+pp-topbar.topbar {
+  display: block;
+
+  & .bar-top,
+  & .bar-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  /* Both rows put their right-hand item hard right. .house-balance gets this from
+     the global rule in style.css; the user menu has to ask. */
+  & .user-menu { margin-left: auto; }
+
+  /* A mark, not a link — it is the one thing on the bar that never changes, so it
+     must not invite a click the way the nav items do. It IS clickable (the
+     dashboard), which is what the pointer and the brass-lit hover say. */
+  & .wordmark {
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  & .wordmark:hover span { text-shadow: 0 0 16px rgba(217,165,63,.75); }
+
+  & .bar-meta { margin-top: 4px; }
+
+  & .nav {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--stripe);
+  }
+
+  /* Same inline strip as the Desk's .tabs, down to the gap — one tab-bar look in
+     both places rather than two that nearly match. */
+  & .nav-items {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  /* ---------- The user menu: a dropdown at EVERY width ---------- */
+
+  /* Unlike the nav beside it, this never becomes something else on a phone — it is
+     two controls, which fits a dropdown at any size. One arrangement is what keeps
+     Account and Sign out in one place in the markup rather than two branches. */
+  & .user-menu { position: relative; }
+
+  & .user-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    padding: 3px 9px;
+    font-size: 12px;
+    box-shadow: var(--hard-sm);
+    list-style: none;           /* Firefox draws a marker on <summary> */
+  }
+
+  & .user-toggle::-webkit-details-marker { display: none; }
+  & .user-toggle .chev { transition: transform .12s ease; }
+  & .user-menu[open] > .user-toggle .chev { transform: rotate(180deg); }
+
+  /* Floated over the page rather than opened into the bar: a disclosure that
+     reflows the header moves every row beneath it, and this one is reachable from
+     every page. .topbar is already position:relative with a z-index and clips
+     nothing, so the panel escapes it cleanly.
+
+     THIS z-index IS NOT ON THE DOCUMENTED LADDER (topbar 5 · tooltip 40 · toast 50
+     · loading-bar 60) and must not be raised onto it. .topbar's own z-index makes a
+     stacking context, so this number is only ever compared with the bar's other
+     children; against the page the whole bar is 5, which is what puts the panel
+     over the content. A ladder value here would buy nothing and read as though it
+     had been reasoned about.
+
+     Borrows .panel's pixel border and hard shadow rather than inventing a third
+     card treatment — it is a small panel, so it should look like one. */
+  & .user-items {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 20;
+    display: grid;
+    gap: 4px;
+    min-width: 11rem;
+    padding: 8px;
+    background: var(--field-2);
+    border: 2px solid var(--stripe);
+    box-shadow: var(--hard);
+  }
+
+  /* ALIGNED ON THE CONTROLS, NOT ON THE PANEL, and that is the whole reason this
+     line is here: a <button> does not inherit text-align — every UA stylesheet
+     gives it `center` outright — so a value set on the container reaches the
+     <a class="btn"> and nothing else, and the two items come out misaligned. The
+     third kind is on /account, where the Account item is a <span class="btn">;
+     matching on .btn covers all three. */
+  & .user-items .btn,
+  & .user-items button {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* ---------- Reference band: the rulebook, chat, the platform ---------- */
+
+  /* Sized by CONTAINER, not by a class. `button.small` is an element selector, so
+     it would style Sign out and skip every <a class="btn"> beside it — the band
+     would come out half one size and half the other. */
+  & .bar-utility {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 6px;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  /* THE SECONDARY CONTROL SIZE, and the user menu's items share it rather than
+     copying it — they are the same kind of thing, so one selector list is what
+     stops them drifting into two sizes that nearly match.
+
+     Sized by CONTAINER, not by a class, for the reason above: `button.small` is an
+     element selector and would reach Sign out while skipping every <a class="btn">
+     beside it.
+
+     The block padding is a thumb target, not a mouse one — `.small`'s 3px lands
+     near 24px tall, which is fine for a pointer and not for a finger. The wide
+     layout below tightens it; the type size and the shadow are the same at both. */
+  & .bar-utility .btn,
+  & .bar-utility button,
+  & .user-items .btn,
+  & .user-items button {
+    padding: 9px;
+    font-size: 12px;
+    box-shadow: var(--hard-sm);
+  }
+
+  /* Every group borrows the app's existing "you are here" vocabulary from .tabs: the
+     row is muted, and the current page is the brass one. Every item being full
+     brass gave the row no hierarchy and left nothing for the current-page marker
+     to be — it read as one more link. */
+  & .nav-items .btn,
+  & .bar-utility .btn,
+  & .bar-utility button,
+  & .user-toggle,
+  & .user-items .btn,
+  & .user-items button {
+    border-color: var(--stripe);
+    color: var(--chalk-dim);
+  }
+
+  & .nav-items .btn:hover,
+  & .bar-utility .btn:hover,
+  & .bar-utility button:hover,
+  & .user-toggle:hover,
+  & .user-items .btn:hover,
+  & .user-items button:hover {
+    border-color: var(--brass);
+    color: var(--brass);
+  }
+
+  /* The page you are on: same slot, same label, no link. Marked exactly the way
+     .tabs marks its active tab and no further — border, text, wash. The press
+     belongs to :active, where it means "you are clicking this"; borrowing it for
+     "you are here" spends the one gesture the retro layer has on a state that
+     never ends.
+
+     THE SUMMARY TAKES IT TOO, and that is what stops /account being the one page
+     with nothing on screen saying where you are: its marker is inside a menu that
+     is shut. It is a visual cue only — aria-current belongs to the Account item
+     within, because the summary is a disclosure and not the page. (/site never
+     renders <pp-topbar> at all, so Site console can never be current.) */
+  & .nav-items .btn.current,
+  & .bar-utility .btn.current,
+  & .user-items .btn.current,
+  & .user-toggle.current {
+    border-color: var(--brass);
+    color: var(--brass);
+    background: rgba(217,165,63,.08);
+  }
+
+  & .nav-items .btn.current,
+  & .bar-utility .btn.current,
+  & .user-items .btn.current {
+    display: inline-block;
+    cursor: default;
+  }
+
+  /* It is not a link, so it does not answer to the pointer like one. The summary
+     is exempt — it still opens and closes, so it must still feel pressable. */
+  & .nav-items .btn.current:hover,
+  & .bar-utility .btn.current:hover,
+  & .user-items .btn.current:hover { background: rgba(217,165,63,.08); }
+
+  /* A live draft outranks the muting — it is the one thing worth shouting. */
+  & .btn.draft-live {
+    border-color: var(--brass);
+    color: var(--brass);
+  }
+
+  & .live-dot {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: var(--red);
+    color: var(--chalk);
+    padding: 1px 5px;
+    border-radius: 3px;
+    animation: draft-pulse 1.6s ease-in-out infinite;
+  }
+
+  /* ---------- The collapsed menu (phone / tablet portrait) ---------- */
+
+  /* Only ever drawn on a touch-sized screen, so it is sized for a thumb outright
+     rather than in a media query. */
+  & .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+    padding-block: 11px;
+    list-style: none;           /* Firefox draws a marker on <summary> */
+  }
+
+  & .nav-toggle::-webkit-details-marker { display: none; }
+
+  & .nav-toggle .chev { transition: transform .12s ease; }
+  & .nav-menu[open] > .nav-toggle .chev { transform: rotate(180deg); }
+
+  /* Open, the primary items stack one per row — a wrapped horizontal row of eight
+     controls is a wall of similar rectangles on a phone, and stacking gives each a
+     whole tap target at the type size the band deserves. */
+  & .nav-menu[open] > .nav-items {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  /* The wide row's padding is sized for a mouse; this is sized for a thumb. */
+  & .nav-menu[open] > .nav-items > .btn {
+    padding-block: 13px;
+    font-size: 15px;
+  }
+
+  /* BOTH BANDS IN ONE STACK, which is why .bar-utility follows the <nav> in the
+     DOM: it lands where it belongs on screen and keeps tab order matching. The
+     secondary items pair off half width — they stay secondary by type size and
+     width rather than by being harder to hit, and a full-width "Sign out" arrives
+     reading as loud as The League.
+
+     An odd count leaves the last one half width and alone. Left that way on
+     purpose: spanning it is the same mistake in one row instead of all of them.
+
+     Default VISIBLE and hidden only while collapsed, never the inverse. A browser
+     without :has() drops the rule it cannot parse — this way that leaves the band
+     permanently on show, which is untidy; the other way it would leave Account and
+     Sign out unreachable on a phone.
+
+     Bounded to the narrow layout, which is the complement of the wide breakpoint
+     below and has to stay that way: :has() carries the specificity of its argument,
+     so unbounded this rule outweighs the wide layout's own `display` and takes the
+     band off the screen exactly where there is room for it. The disclosure is never
+     open up there, so the selector would match. */
+  @media (max-width: 879.98px) {
+    &:has(.nav-menu:not([open])) .bar-utility { display: none; }
+  }
+
+  /* The readouts give up their horizontal spread first. No `order` juggling: the
+     two rows hold two items each now, so flex-wrap already drops the balance onto
+     its own line — still right-aligned by the global margin — and leaves the league
+     and the week above it, which is the order they are read in anyway. */
+  @media (max-width: 620px) {
+    & .bar-top,
+    & .bar-meta { gap: 10px; }
+    & .wordmark { font-size: 18px; }
+    & .house-balance .amount { font-size: 20px; }
+  }
+
+  /* ---------- Wide: three rows, no disclosure ---------- */
+  @media (min-width: 880px) {
+    /* GRID-PLACED rather than stacked, because .bar-utility has to reach the first
+       row from last position in the DOM. It cannot be moved there in the markup
+       without straddling two rows of readouts, which a single <details> cannot do,
+       and duplicating it would mean two of every item and two tab stops.
+       `display: contents` lets .bar-top and .bar-meta hand their children to this
+       grid; both are plain <div>s, so nothing here depends on how a browser treats
+       the pseudo-element below. */
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    column-gap: 20px;
+    row-gap: 4px;
+
+    & .bar-top,
+    & .bar-meta    { display: contents; }
+    & .wordmark    { grid-area: 1 / 1; }
+    & .bar-utility { grid-area: 1 / 2; }
+    & .user-menu   { grid-area: 1 / 3; margin-left: 0; }
+    & .who         { grid-area: 2 / 1; }
+    & .nav         { grid-area: 3 / 1 / 4 / 4; }
+
+    /* Selected through .bar-meta — which is still an ancestor, since `display:
+       contents` drops the box and not the element — so this out-specifies the
+       global `.house-balance { margin-left: auto }` in style.css and can actually
+       turn it off. That global is what right-aligns it in the narrow layout's flex
+       row, so it has to stay there and go here. */
+    & .bar-meta .house-balance {
+      grid-area: 2 / 2 / 3 / 4;
+      justify-self: end;
+      margin-left: 0;
+    }
+
+    /* Right-aligned against the balance beneath it, and back on one line — the
+       stacked grid is the phone's answer, not this one. Outside the @supports
+       below on purpose: this band never depended on the disclosure, so it should
+       survive the fallback path where the Menu button does. */
+    & .bar-utility {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 4px;
+      margin-top: 0;
+    }
+
+    /* Same pair as the narrow layout, tightened for a pointer. */
+    & .bar-utility .btn,
+    & .bar-utility button,
+    & .user-items .btn,
+    & .user-items button { padding: 3px 9px; }
+
+    /* CSS cannot open a <details>, so the wide layout reveals the content instead
+       of the element. Guarded, because a browser without ::details-content would
+       otherwise hide the summary AND the content and leave no nav at all; there it
+       keeps a working Menu button, which is a smaller loss than an invisible nav. */
+    @supports selector(details::details-content) {
+      & .nav-menu > .nav-toggle { display: none; }
+      & .nav-menu::details-content { content-visibility: visible; }
+    }
+  }
+}
+
+@keyframes draft-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+  pp-topbar .nav-toggle .chev { transition: none; }
+}

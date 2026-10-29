@@ -1,0 +1,31 @@
+.leaving {
+  & .exit {
+    display: flex;
+    gap: var(--sp-3);
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: var(--sp-3) 0;
+
+    & + .exit { border-top: 1px solid var(--stripe); }
+    & .btn, & button { flex: 0 0 auto; }
+  }
+
+  /* THE ROW HAS EXACTLY TWO CHILDREN, and .act is what keeps it that way. `.exit` is
+     space-between, so a bare ⓘ beside the button became a third item and the two were
+     pushed to opposite ends of the row — the reason drifting away from the control it
+     explains. Grouped, the gap belongs between the label and the action, which is the one
+     place it means anything. */
+  & .act {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+
+  /* The choice and its ⓘ read as one line; the icon explains the <b> it follows. */
+  & .what {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+  }
+}

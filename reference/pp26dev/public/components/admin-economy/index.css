@@ -1,0 +1,58 @@
+/* <pp-admin-economy> — uses global .panel/.card/.disclaimer/.tag; this adds the
+   few placements that are local to the tab. */
+.admin-economy {
+  display: block;
+
+  & > .disclaimer { margin-bottom: 14px; }
+  & .amt { color: var(--brass); }
+  & td.acts { text-align: right; white-space: nowrap; }
+}
+
+/* "Where the money is" — the three buckets a dollar can be in, left to right in the
+   order it moves. Wraps to a column on narrow screens; the arrows are decorative. */
+.admin-economy .money-map {
+  & .flow {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  & .bucket {
+    flex: 1 1 160px;
+    border: 1px solid var(--stripe);
+    padding: 10px 12px;
+
+    & .label {
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--chalk-dim);
+    }
+    & .amount { font-size: 20px; margin: 2px 0 4px; }
+    & p { font-size: 12px; color: var(--chalk-dim); margin: 0; }
+  }
+
+  & .bucket.held { border-color: var(--brass); }
+
+  & .arrow {
+    align-self: center;
+    color: var(--chalk-dim);
+    font-size: 20px;
+  }
+  & .arrow.total { color: var(--brass); }
+
+  & .note { font-size: 12px; margin: 12px 0 0; }
+
+  @media (max-width: 700px) {
+    & .flow { flex-direction: column; }
+    & .arrow { display: none; }
+  }
+}
+
+/* A reversed or rejected contribution stays in the log but should not read as money
+   the league still holds. */
+.admin-economy .money.void {
+  text-decoration: line-through;
+  color: var(--chalk-dim);
+}

@@ -1,0 +1,8 @@
+/* <pp-admin-draft> — uses global .panel; block container. */
+.admin-draft {
+  display: block;
+
+  & .room-actions { margin-top: 12px; }
+  /* a.btn doesn't inherit button.primary's fill — restate it for the room link */
+  & .room-actions .btn.primary { background: var(--brass); color: var(--field); }
+}

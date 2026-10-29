@@ -1,0 +1,9 @@
+# Every logo is requested through asset(), whose URL carries the file's mtime, so a changed
+# logo arrives at a new URL and the old one can be held for a year without going stale.
+# Header set, not append: it replaces the month public/.htaccess gives every PNG.
+<IfModule mod_expires.c>
+    ExpiresByType image/png "access plus 1 year"
+</IfModule>
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>

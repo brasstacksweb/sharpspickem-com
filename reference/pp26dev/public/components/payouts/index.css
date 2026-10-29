@@ -1,0 +1,10 @@
+/* <pp-payouts> — styles nested from the .payouts root class. */
+.payouts {
+  display: block;
+
+  & .amt { float: right; font-family: var(--mono); color: var(--brass); }
+}
+
+/* A forfeited share pays nothing and rolls forward (§10, Q14) — dimmed so it reads as
+   a recorded non-payment rather than an owner who received $0.00. */
+.payouts .list-item.forfeited .amt { color: var(--chalk-dim); }

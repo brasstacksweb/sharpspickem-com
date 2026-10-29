@@ -1,0 +1,48 @@
+/* <pp-site-quota> — the CFBD API budget. Built on the global .panel/table styles and the
+   :root palette. The state chip repeats .job-state's colour language rather than reaching
+   for it: a component's CSS nests from its own root class, and three shared declarations
+   are cheaper than coupling two panels together for them. */
+.site-quota {
+  display: block;
+  margin-top: 16px;
+
+  .quota-alert {
+    margin: 0;
+    padding: 12px 16px;
+    background: rgba(208, 90, 69, .12);
+    border-bottom: 1px solid var(--stripe);
+    color: var(--chalk);
+    font-size: 13px;
+    line-height: 1.5;
+
+    b { color: var(--red); }
+  }
+
+  .quota-head {
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .quota-state {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 3px;
+
+    &.ok   { background: rgba(133, 185, 111, .15); color: var(--up); }
+    &.warn { background: rgba(217, 165, 63, .16);  color: var(--brass); }
+    &.over { background: rgba(208, 90, 69, .18);   color: var(--red); }
+  }
+
+  .small { font-size: 11px; }
+
+  /* Figures right-aligned so the columns compare down the page rather than across it —
+     the question this table answers is which endpoint is the expensive one. */
+  td.num, th.num { text-align: right; }
+  thead th:not(:first-child) { text-align: right; }
+}

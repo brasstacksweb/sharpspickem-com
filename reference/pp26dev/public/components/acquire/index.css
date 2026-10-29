@@ -1,0 +1,21 @@
+/* <pp-acquire> — the acquire dialogs. Everything else in them is the shared .dialog
+   treatment; only the "what you are taking" block is particular to these three.
+
+   `display: contents` because this element renders no chrome of its own — a page includes
+   it once, wherever is convenient, and it must not occupy a row in whatever layout it
+   lands in. */
+.acquire {
+  display: contents;
+
+  /* The team you are taking, stated once above the picker so the choice below it has an
+     object. Without it the select asks "give up which?" with nothing naming the trade. */
+  & .swap-what {
+    margin: 10px 0 14px;
+    padding: 8px 10px;
+    border: var(--pixel, 2px) solid var(--line);
+    background: var(--field-2);
+    font-size: 14px;
+
+    & .muted { margin-left: 8px; font-family: var(--mono); font-size: 12px; }
+  }
+}

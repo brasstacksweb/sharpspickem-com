@@ -1,0 +1,43 @@
+/* <pp-site-jobs> — job heartbeat table. Built on the global .panel/table styles and
+   the :root palette; the three states reuse the same colour language as .tag.locked /
+   .tag.open so "failing" reads the same red as a locked team does elsewhere. */
+.site-jobs {
+  display: block;
+
+  .jobs-alert {
+    margin: 0;
+    padding: 12px 16px;
+    background: rgba(208, 90, 69, .12);
+    border-top: 1px solid var(--stripe);
+    border-bottom: 1px solid var(--stripe);
+    color: var(--chalk);
+    font-size: 13px;
+    line-height: 1.5;
+
+    b { color: var(--red); }
+  }
+
+  .job-state {
+    display: inline-block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 3px;
+
+    &.ok      { background: rgba(133, 185, 111, .15); color: var(--up); }
+    &.overdue { background: rgba(217, 165, 63, .16);  color: var(--brass); }
+    &.failing { background: rgba(208, 90, 69, .18);   color: var(--red); }
+    &.never   { background: var(--field-3);           color: var(--chalk-dim); }
+  }
+
+  .small { font-size: 11px; }
+
+  .job-error {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--red);
+    overflow-wrap: anywhere;
+  }
+}

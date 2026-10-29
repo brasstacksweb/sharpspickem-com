@@ -1,0 +1,40 @@
+/* <pp-portfolio> — team-table styles nested from the .portfolio root class. */
+.portfolio {
+  display: block;
+
+  /* THE CELL WRAPS; ITS CHILDREN DO NOT. A row can hold two buttons and a §6 tag at
+     once — "Drop", "Drop if I win", "it is carrying a live Battle" — and with nowrap on
+     the cell that is one unbreakable ~420px line. A table cell that cannot shrink sets
+     the whole table's min-content width, and a grid item's automatic minimum size is its
+     min-content, so the dashboard's 2fr column stretched past the page rather than the
+     table getting narrower. Only the Playoffs fixture had a team in that state, which is
+     why it overflowed there and nowhere else. Keeping nowrap on each child is what the
+     rule was actually for: a label must not break mid-word. */
+  & td.acts {
+    text-align: right;
+    white-space: normal;
+
+    & > * { white-space: nowrap; }
+  }
+
+  /* Why the Sell button is gone for the rest of the season (§8). */
+  & .note {
+    font-size: 12px;
+    color: var(--chalk-dim);
+    margin: 0;
+    padding: 10px 12px 0;
+  }
+}
+
+/* Same treatment as <pp-market>'s, since it is the same figure answering the same question
+   one panel closer to the team it is about. */
+.portfolio .reprices {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+
+  & .lbl { text-transform: uppercase; letter-spacing: 1px; color: var(--chalk-dim); font-size: 11px; }
+  & .at { font-family: var(--mono); color: var(--chalk); }
+  & .at .est { color: var(--chalk-dim); }
+}

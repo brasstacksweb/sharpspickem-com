@@ -1,0 +1,53 @@
+/* <pp-battle-log> — the full battle history. Uses global .panel/.tag/.list-item. */
+.battle-log {
+  display: block;
+
+  & .battle {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  & .line .amt { font-family: var(--mono); color: var(--brass); }
+
+  & .matchup .mono { font-family: var(--mono); color: var(--chalk); }
+  & .matchup .src {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--chalk-dim);
+    margin-left: 4px;
+  }
+
+
+  & .outcome {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    & .amt { font-family: var(--mono); color: var(--up); }
+    & .note { font-size: 12px; }
+  }
+}
+
+/* Jump-to-week — chips rather than a select, because a season is a short list and
+   seeing which weeks exist is half the value. */
+.battle-log .week-jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 12px;
+
+  & .chip {
+    padding: 3px 9px;
+    border: 1px solid var(--stripe);
+    color: var(--chalk-dim);
+    text-decoration: none;
+    font-family: var(--mono);
+  }
+  & .chip:hover { color: var(--chalk); border-color: var(--brass); }
+  & .chip.on { background: var(--brass); color: var(--field); border-color: var(--brass); }
+}

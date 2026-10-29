@@ -1,0 +1,206 @@
+/* <pp-dev-bar> — one fixed line along the floor, on development machines only.
+ *
+ * z-index 45 puts it in the documented ladder (topbar 5 · tooltip 40 · toast 50 ·
+ * loading-bar 60) BELOW toasts, so an error message is never hidden behind a dev control.
+ * Deliberately not the retro marquee the topbar wears: this is not part of the app, and it
+ * should not look like it is. */
+.dev-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  font-family: var(--mono);
+  font-size: 12px;
+  border-top: 3px solid var(--brass);
+  background: var(--field-3);
+  box-shadow: 0 -4px 0 rgba(0, 0, 0, .30);
+
+  /* ONE ROW. It wraps only when the window is too narrow to hold it, which is the one case
+     where covering a little content beats scrolling the controls out of reach. */
+  & .strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 5px 12px;
+    color: var(--chalk);
+  }
+
+  /* Just a mark, not a control. There was a collapse toggle here; at 155px tall the bar
+     needed one and at one row it does not — a button whose only job is hiding buttons. */
+  & .mark {
+    font-size: 13px;
+    line-height: 1;
+    color: var(--brass);
+    flex: none;
+  }
+
+  & .when {
+    color: var(--brass);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  & .moment {
+    letter-spacing: .08em;
+    white-space: nowrap;
+  }
+
+  & .day {
+    color: var(--chalk-dim);
+    white-space: nowrap;
+
+    /* Names the clock this date is on. Only drawn in `moment` mode, where it differs from
+       the one every page beneath renders — in `calendar` the two agree and this would be
+       noise. Dimmer than the date so it reads as a qualifier, not a second field. */
+    & .in-fixture {
+      font-style: normal;
+      opacity: .65;
+      font-size: 10px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+  }
+
+  /* Which offset this league was built with. Only drawn for `calendar`, so it reads as a
+     badge on the exception rather than a label on every league. */
+  & .tag.mode {
+    border: 1px solid var(--brass);
+    color: var(--brass);
+    padding: 0 5px;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Everything that acts, pushed off the readout by margin-left rather than by padding
+     every child. */
+  & .ctl {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+
+  /* SIZE RESTATED FOR EVERY ELEMENT, because `button.small` in style.css is qualified to
+     the element and `button, .btn` is not. A <span class="btn small"> therefore keeps the
+     full-size 7px/13px padding while the buttons beside it take 3px/12px — which is why the
+     current-moment marker sat visibly bigger than the controls it sits between. It is a
+     span rather than a button on purpose: it marks where the league IS and does nothing
+     when pressed, the same idiom the topbar uses for the current page (that one is fine
+     because it does not ask for `.small`). Declared here rather than by widening the global
+     selector, which would resize every `.small` span in the app. */
+  & .btn.small {
+    padding: 3px 9px;
+    font-size: 12px;
+    line-height: normal;
+  }
+
+  /* A group wraps as a UNIT. Without this the row breaks wherever it happens to run out,
+     which put "Go" on its own line under its own select and read as a stray button. */
+  & .grp {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+  }
+
+  & .grp + .grp {
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--stripe);
+  }
+
+  /* The week a moment chip would take you to. Most of them are next week's, so the number
+     is on the control rather than only in its tooltip. */
+  & .grp i {
+    font-style: normal;
+    font-size: 10px;
+    opacity: .65;
+    margin-left: 3px;
+  }
+
+  /* A moment already behind us KEEPS ITS CONTROL and only loses its affordance — a control
+     that vanishes explains nothing to somebody looking for it (gate_tag()'s rule). It loses
+     the word "past" though: the reason is in `title`, and at the `final` moment three of the
+     four are behind us, so the tags cost more width than anything else on the row. */
+  & .past {
+    opacity: .5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  & .current {
+    background: var(--brass);
+    color: var(--field);
+    box-shadow: none;
+  }
+
+  & select {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 2px 5px;
+  }
+
+  /* A flex child in a bar packed with controls, so it must not be handed a share of the
+     free space — the ⓘ is 15px and stays 15px. Where it OPENS is no longer this file's
+     business: the card is in the top layer, clear of a bar that sits on the floor. */
+  & button.info {
+    flex: none;
+  }
+
+  /* The last step's account, above the strip and shut by default. Scrolls rather than
+     growing, because a multi-week play can fill it and the bar must not become the page. */
+  & .log {
+    border-bottom: 1px solid var(--stripe);
+
+    & summary {
+      padding: 4px 12px;
+      cursor: pointer;
+      color: var(--chalk-dim);
+    }
+
+    & ol {
+      max-height: 12rem;
+      overflow-y: auto;
+      margin: 0;
+      padding: 4px 12px 8px 12px;
+      list-style: none;
+      line-height: 1.6;
+    }
+
+    /* A step's own headings — the week, the owners' tally — against the detail under them. */
+    & .head {
+      color: var(--brass);
+      margin-top: 4px;
+    }
+
+    & .sub {
+      color: var(--chalk-dim);
+      padding-left: 14px;
+    }
+  }
+
+  & .drift {
+    margin: 0;
+    padding: 6px 12px;
+    color: var(--chalk);
+    background: var(--red);
+    line-height: 1.45;
+  }
+}
+
+/* THE ONE RULE HERE NOT NESTED UNDER .dev-bar, and it has to be: .toast is fixed at
+   bottom 20px, so the bar would sit under every toast. The bar is the thing that moved the
+   floor, so the bar is what lifts them off it. Scoped to the dev body class, so nothing
+   changes on a machine that has no bar. */
+body.devtime {
+  padding-bottom: 36px;
+}
+
+body.devtime .toast {
+  bottom: 56px;
+}

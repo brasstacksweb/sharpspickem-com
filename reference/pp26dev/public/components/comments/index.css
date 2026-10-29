@@ -1,0 +1,107 @@
+/* <pp-comments> — Battle Board / Trade Talk thread. Nested from .comments. */
+.comments {
+  display: block;
+  margin-top: 8px;
+
+  & details {
+    border-top: 1px solid var(--stripe);
+    padding-top: 6px;
+  }
+
+  /* This <summary> is the ONLY disclosure on the thread. The record pages used to wrap
+     it in a second <details> carrying the same label, so a reader met "Battle Board >
+     Battle Board" and two tab stops; they now pass open => false instead. The padding
+     and the brass hover came off that wrapper — they belong here, where every call site
+     gets them. */
+  & summary {
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--chalk-dim);
+    user-select: none;
+    padding: 4px 0;
+
+    & .count {
+      color: var(--brass);
+      font-family: var(--mono);
+    }
+
+    &:hover, &:focus-visible { color: var(--brass); }
+  }
+
+  & .thread {
+    margin: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  & .comment {
+    background: var(--field-3);
+    border-left: 2px solid var(--stripe);
+    border-radius: 4px;
+    padding: 6px 10px;
+
+    & .meta {
+      font-size: 12px;
+
+      & b { color: var(--chalk); }
+      & .when { color: var(--chalk-dim); margin-left: 6px; }
+    }
+
+    & .text {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      margin-top: 2px;
+    }
+
+    /* A removed comment: a quiet tombstone, not a comment. No accent bar, so it
+       reads as an absence rather than a post. */
+    &.removed {
+      background: none;
+      border-left-color: transparent;
+      font-size: 12px;
+    }
+  }
+
+  & .controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  & .edit-box textarea { width: 100%; margin-top: 4px; }
+
+  /* link-style buttons, scoped to comments (no global .link exists) */
+  & .link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    color: var(--chalk-dim);
+    cursor: pointer;
+
+    &:hover { color: var(--chalk); text-decoration: underline; }
+    &.danger { color: var(--red); }
+  }
+
+  & .empty { padding: 2px 0; }
+
+  & .add {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-top: 6px;
+
+    & textarea { flex: 1; }
+  }
+
+  /* Read-only thread (e.g. a finished draft's chat). */
+  & .closed {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--stripe);
+    font-style: italic;
+  }
+}

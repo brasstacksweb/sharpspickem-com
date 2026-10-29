@@ -1,0 +1,78 @@
+/* <pp-notification-prefs> — the email checkboxes on /account. */
+.notification-prefs {
+  display: block;
+
+  & .pref-list, & .always-list {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+  }
+
+  & .pref {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--stripe);
+
+    &:first-child { padding-top: 0; }
+    &:last-child { border-bottom: 0; padding-bottom: 0; }
+
+    /* The checkbox, its label and the count read as one line; the blurb sits under
+       them, indented past the box so the sentence lines up with the label. */
+    & label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      cursor: pointer;
+
+      /* Opt OUT of the global label treatment. `label` app-wide is a field CAPTION —
+         11px, uppercase, letter-spaced, dimmed — which is right above an input and
+         wrong for this, where the label is the thing being read and the checkbox is
+         the small part. */
+      font-size: 14px;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--chalk);
+    }
+
+    & .pref-label { font-weight: 600; }
+  }
+
+  /* `input` app-wide is a full-width text field (width: 100%, padding, border), which
+     stretches a checkbox across the row and pushes its label off the end. Same fix
+     admin-rankings makes for the receiving-votes column, plus an explicit box size so
+     the blurb's indent below has something fixed to line up against. */
+  & input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    padding: 0;
+    margin: 0;
+    accent-color: var(--brass);
+    cursor: pointer;
+  }
+
+  & .pref-blurb {
+    margin: 5px 0 0 24px;             /* 16px box + the 8px flex gap */
+    color: var(--chalk-dim);
+    font-size: 13px;
+  }
+
+  & .save-row { margin-top: 16px; }
+
+  & .always-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--stripe);
+    font-size: 14px;
+
+    &:first-child { padding-top: 0; }
+    &:last-child { border-bottom: 0; padding-bottom: 0; }
+  }
+
+  /* The phrase carries the row; the group chip is context, so it sits away from it
+     rather than beside it. */
+  & .always-what { font-weight: 600; margin-right: auto; }
+}

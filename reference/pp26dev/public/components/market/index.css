@@ -1,0 +1,72 @@
+/* <pp-market> — market-table styles nested from the .market root class. */
+.market {
+  display: block;
+
+  & td.acts { text-align: right; }
+}
+
+/* Historical view — visibly a different mode, not a subtly different table. */
+.market {
+  /* A LABEL IN A HEADER, against two globals written for forms: `label` is `display: block`
+     with a 10px top margin, and `input, select, textarea` are `width: 100%`. Left alone the
+     select drops under the word "Poll" and stretches the width of the header, and the margin
+     knocks the label off the baseline the rest of the header is aligned to. Both are right
+     for a stacked form field and neither is right for a control sitting beside a heading. */
+  & .week-pick {
+    display: inline-flex;
+    align-items: baseline;
+    margin: 0 0 0 auto;
+    font-size: 12px;
+    color: var(--chalk-dim);
+
+    & select { margin-left: 6px; width: auto; }
+  }
+
+  & .as-of {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--chalk-dim);
+    background: var(--field-2);
+    border-bottom: 1px solid var(--stripe);
+  }
+
+  /* A CAPPED BOX RATHER THAN AN ENDLESS ONE. The board is every House team — 130-odd rows
+     in a preseason league — and at full height the panels below it are unreachable without
+     scrolling past all of them. The draft board already answers this the same way; this is
+     the market's version of it.
+
+     The header goes sticky because a table you scroll loses what its columns mean, which a
+     list of picks never had to worry about. It needs the OPAQUE panel colour: `th` is
+     transparent by default and the rows would run underneath it. */
+  & .table-wrap { max-height: var(--scroll-max); overflow-y: auto; }
+
+  & thead th {
+    position: sticky;
+    top: 0;
+    /* Over the rows, and under the corner cell that is pinned both ways — see the three
+       layers in the .board rule in assets/style.css. */
+    z-index: 2;
+    background: var(--field-2);
+    /* An INSET SHADOW standing in for the border. Under `border-collapse: collapse` the
+       cell borders belong to the table rather than the cell, so a sticky header leaves its
+       underline behind at the top of the list and scrolls without one. A shadow is painted
+       by the cell and travels with it. */
+    box-shadow: inset 0 -1px 0 var(--stripe);
+  }
+}
+
+/* When the board is next repriced, beside the poll picker it relates to. Quiet: it answers a
+   question the held rows raise, it is not a call to act. */
+.market .reprices {
+  /* Takes the auto margin the .sub used to carry: the two never render together, since a
+     historical board shows the sub and no repricing date. */
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+
+  & .lbl { text-transform: uppercase; letter-spacing: 1px; color: var(--chalk-dim); font-size: 11px; }
+  & .at { font-family: var(--mono); color: var(--chalk); }
+  & .at .est { color: var(--chalk-dim); }
+}

@@ -1,0 +1,24 @@
+/* <pp-admin-league> — one field and one fact. Layout comes from .panel/.row; only the
+   name field wanting the width, and the ⓘ sitting on a block-level <label>, need saying. */
+.admin-league {
+  & .row {
+    display: flex;
+    gap: var(--sp-3);
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  & .grow { flex: 1 1 18rem; }
+  & .save-row { margin-left: auto; }
+
+  /* The caption and its ⓘ, side by side. `label` is display:block and stays that way — the
+     icon is its sibling, not its child, so a click on it is not forwarded to the input. */
+  & .cap {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+  }
+
+  /* The season reads as a value, not a caption: mono and chalk, against the dimmed
+     "Season" that labels it. */
+  & header .sub b { font-family: var(--mono); color: var(--chalk); }
+}

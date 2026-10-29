@@ -1,0 +1,42 @@
+/* <pp-identity> — the account fields on /account.
+   Padding, borders and the field treatment all come from .panel / .body / label in
+   style.css; what is here is only the email block and the helper lines under the two
+   name fields. */
+.identity {
+  display: block;
+
+  & .identity-email {
+    padding-bottom: 14px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--stripe);
+
+    /* The label is the first thing in the panel body, which already has its own top
+       padding — the global 10px on top of that reads as a gap. */
+    & label { margin-top: 0; }
+  }
+
+  /* The email, rendered as text rather than a disabled input. A greyed-out field reads
+     as "not yet", which is wrong — it is not editable here at all. */
+  & .identity-static {
+    font-family: var(--mono);
+    color: var(--chalk);
+    padding: 2px 0;
+  }
+
+  /* .row aligns its columns on `align-items: end`, which would hang the two inputs off
+     the bottom of unequal helper text. Stretch instead and let each column lay itself
+     out, so the two inputs line up with each other however the sentences wrap. */
+  & .row {
+    align-items: stretch;
+
+    & > div { display: flex; flex-direction: column; }
+
+    /* Push each helper line to the bottom of its column, so a one-line and a two-line
+       caption still leave both inputs on the same baseline. */
+    & .small { margin-top: auto; }
+  }
+
+  & .small { font-size: 12px; margin: 4px 0 0; }
+
+  & button { margin-top: 14px; }
+}

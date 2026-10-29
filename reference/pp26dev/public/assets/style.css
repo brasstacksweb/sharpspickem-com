@@ -1,0 +1,860 @@
+/* Sharps Pick 'Em — stadium scoreboard identity
+   Palette: night-game field greens, chalk lines, brass trophy gold. */
+
+:root {
+  --field: #0d2318;      /* deep field green — page background */
+  --field-2: #143020;    /* panel green */
+  --field-3: #1b3d29;    /* raised panel */
+  --stripe: #2c5138;     /* yard-line borders */
+  --chalk: #f1ead8;      /* chalk-white text */
+  --chalk-dim: #b9b3a2;  /* secondary text */
+  --brass: #d9a53f;      /* trophy gold accent */
+  --red: #d05a45;        /* alerts / locked */
+  --up: #85b96f;         /* positive / open */
+  --hard: 4px 4px 0 rgba(0,0,0,.40);      /* retro pixel drop shadow */
+  --hard-sm: 3px 3px 0 rgba(0,0,0,.32);   /* smaller pixel drop shadow (controls) */
+  --scanline: repeating-linear-gradient(rgba(0,0,0,0) 0 2px, rgba(0,0,0,.10) 3px 4px);
+
+  /* Spacing, on a 4px base. Components reach for these rather than typing a gap, so the
+     rhythm is one decision instead of a number per rule. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  /* How tall a panel that scrolls its own contents may get. Short of the viewport on
+     purpose: a table that fills the screen swallows every touch, leaving nothing to grab
+     to scroll PAST it. */
+  --scroll-max: 62vh;
+  /* A team logo's box — about the height of the name beside it. */
+  --logo: 20px;
+
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --display: "Graduate", "Arial Black", sans-serif;
+  --body: "Barlow", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--field);
+  color: var(--chalk);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.45;
+  /* faint yard lines */
+  background-image: repeating-linear-gradient(
+    to bottom, transparent 0 119px, rgba(241,234,216,.035) 119px 120px);
+}
+
+h1, h2, h3 { font-weight: 600; }
+a { color: var(--brass); }
+.team-link { color: inherit; text-decoration: none; }
+.team-link:hover, .team-link:focus-visible {
+  color: var(--brass); text-decoration: underline; text-underline-offset: 3px;
+}
+
+/* ---------- Top bar ---------- */
+/* The topbar reads as a lit "marquee": a scanline texture over the panel green,
+   a bold brass base rail, and a hard shadow so it sits above the page. */
+.topbar {
+  display: flex; align-items: center; gap: 20px;
+  padding: 14px 22px;
+  border-bottom: 3px solid var(--brass);
+  background-color: var(--field-2);
+  background-image: var(--scanline);
+  box-shadow: 0 4px 0 rgba(0,0,0,.30);
+  position: relative; z-index: 5;
+  flex-wrap: wrap;
+}
+.wordmark {
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: 1px;
+  color: var(--chalk);
+  text-shadow: 2px 2px 0 rgba(0,0,0,.4);
+}
+.wordmark span { color: var(--brass); text-shadow: 0 0 12px rgba(217,165,63,.4); }
+.house-balance { margin-left: auto; text-align: right; }
+.house-balance .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--chalk-dim);
+}
+.house-balance .amount {
+  font-family: var(--mono); font-size: 26px; color: var(--brass); font-weight: 600;
+}
+.topbar .who { color: var(--chalk-dim); font-size: 13px; }
+.topbar .who b { color: var(--chalk); }
+
+/* ---------- Ticker (signature element) ---------- */
+.ticker-wrap {
+  overflow: hidden; white-space: nowrap;
+  border-bottom: 1px solid var(--stripe);
+  background: #0a1c13;
+  padding: 7px 0;
+}
+/* A TV news ticker: the line starts entirely off the right edge, crosses, and leaves
+   entirely at the left, so every team gets the same time on screen. It used to run two
+   copies of the list from translateX(0) to -50%, which is the seamless-loop trick — but
+   "seamless" meant the list was ALREADY across the screen when the page loaded, so #1
+   was at the left edge on arrival and gone in seconds while #22 got the whole crossing.
+   Reported by Spencer.
+
+   The units are deliberately mixed: 100vw is the viewport (the strip is full-bleed,
+   rendered above .page), and 100% is the line's own width, so the pair reads "just past
+   the right edge" to "just past the left" whatever the list is. Both ends are off-screen,
+   so the restart is never visible and the dropped second copy is not missed. */
+.ticker { display: inline-block; animation: tick 75s linear infinite; }
+.ticker-wrap:hover .ticker { animation-play-state: paused; }
+@keyframes tick { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+/* Before the first poll the strip holds one sentence; sliding it across reads as a bug. */
+.ticker.still { animation: none; padding-left: 4px; }
+@media (prefers-reduced-motion: reduce) { .ticker { animation: none; } }
+.tick-item { font-family: var(--mono); font-size: 12.5px; margin: 0 18px; color: var(--chalk-dim); }
+.tick-item b { color: var(--chalk); font-weight: 600; }
+.tick-item .mv { color: var(--brass); }
+.tick-item .own { color: var(--up); }
+
+/* ---------- Layout ---------- */
+.page { max-width: 1240px; margin: 0 auto; padding: 22px; }
+.grid { display: grid; grid-template-columns: 2fr 1fr; gap: 22px; align-items: start; }
+/* A grid item's automatic minimum size is its MIN-CONTENT, not zero — so one table cell
+   that cannot wrap stretches its whole track and pushes the page wider than .page's
+   max-width. That is a property of the layout rather than of any one table, and it has
+   already produced one report, so it is fixed here once instead of in each component
+   that grows a wide cell. Panels still get narrower than their content rather than
+   overflowing, which is the behaviour every table below assumes. */
+.grid > * { min-width: 0; }
+
+/* CLIP, NOT HIDDEN. `hidden` makes this a scroll container, which computes `overflow-y` to
+   `auto` as well and hands the grid its own vertical scrollbar; `clip` clips one axis and
+   leaves the other `visible`.
+
+   It is here to stop a descendant that cannot shrink from widening the PAGE, which turns
+   every table's own `overflow-x: auto` into a no-op: a table only scrolls inside its panel
+   while the panel is the narrower of the two, and if the layout has grown to fit the table
+   instead, dragging the table drags the document. The balloon that first caused that is
+   gone — a closed popover has no layout — but the rule is not about the balloon. */
+.grid { overflow-x: clip; }
+
+/* On a phone `vh` is the LARGE viewport — the one with the address bar hidden — so 62vh is
+   more of the screen than it reads as, and the table takes almost all of what you can see.
+   `dvh` measures what is actually visible; the vh line above it is the fallback, and an
+   engine that does not know dvh simply keeps it. */
+@media (max-width: 560px) {
+  :root {
+    --scroll-max: 55vh;
+    --scroll-max: 55dvh;
+  }
+}
+
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+/* THE PHONE'S SEQUENCE IS NOT THE DESKTOP COLUMNS', and it has to be said in CSS because
+   the markup can only say one of them. `.grid` is two wrapper divs, so collapsing to one
+   column concatenates them — the whole left column, then the whole right — and the left
+   ends with a board of every team in the league. Everything in the right column therefore
+   landed behind ~134 table rows, including <pp-battles>, which carries the only Raise the
+   Stake / Accept Raise controls in the app (/battles is a log with no buttons) against a
+   deadline that expires at kickoff.
+
+   `display: contents` drops the two wrappers out of the box tree so every panel becomes a
+   direct grid item, and `order` then sequences them. That decoupling is also what lets the
+   desktop columns be THEMATIC at all — see the note in dashboard.php: left is what you hold
+   and how it moves, right is money and games. Neither arrangement has to serve both shapes.
+
+   Ordered by what needs you: your position, then your roster and everything acting on it —
+   the wagers, the three ways a team changes hands — then the board, then the record. The
+   board is last of the actionable panels because it is by far the longest and browsing it
+   is the one thing you arrive already meaning to do.
+
+   CASH SITS DIRECTLY ABOVE THE BOARD, which is the one position here that is load-bearing
+   rather than editorial. <pp-funds> publishes Free to Spend — defined as the largest bid the
+   market will accept — and the bid dialog does NOT repeat it: it offers Market Value as the
+   minimum and says nothing about the ceiling, so an owner who bids past it learns by being
+   refused. Below the board, the input to the action lands after the action. The Margin Call
+   notice and the unconfirmed-contribution warning are in that panel too, and both refuse
+   acquisitions outright. Portfolio at the top is not a substitute: it prints Available
+   Funds, which differs from Free to Spend by committed bids plus the §11 reserve, and that
+   subtraction is the whole reason this panel exists.
+
+   THE COST, stated because it is invisible: visual order stops matching DOM and tab order.
+   Acceptable here — these are independent panels rather than steps in a task, and tab order
+   WITHIN each panel is untouched — but a new panel that belongs to a sequence would not be.
+
+   Panels are named by their custom-element tag, which is the one selector a component
+   cannot rename without renaming itself. A panel with no entry falls to `order: 0` and
+   sorts ahead of this list, which fails loudly at the top of the page rather than quietly
+   at the bottom. */
+@media (max-width: 900px) {
+  .grid > div { display: contents; }
+  .grid > div > * { min-width: 0; }
+
+  .grid pp-portfolio-summary { order: 1; }
+  .grid pp-portfolio         { order: 2; }
+  .grid pp-battles           { order: 3; }
+  .grid pp-trades            { order: 4; }
+  .grid pp-orders            { order: 5; }
+  .grid pp-funds             { order: 6; }
+  .grid pp-market            { order: 7; }
+  .grid pp-acquire           { order: 8; }   /* dialogs only — showModal() puts them in the
+                                                top layer, so this row has no height */
+  .grid pp-payouts           { order: 9; }
+  .grid pp-record            { order: 10; }
+}
+
+.panel {
+  background: var(--field-2);
+  border: 2px solid var(--stripe);
+  border-radius: 0;                 /* pixel-sharp corners */
+  box-shadow: var(--hard);          /* retro hard drop shadow */
+  margin-bottom: 22px;
+}
+.panel > header {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--stripe);
+}
+.panel > header h2 {
+  margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2.5px;
+}
+.panel > header .sub { font-size: 12px; color: var(--chalk-dim); margin-left: auto; }
+.panel .body { padding: 14px 16px; }
+.panel .body.flush { padding: 0; }
+
+/* ---------- Tables ---------- */
+
+/* A TABLE SCROLLS INSIDE ITS PANEL RATHER THAN PUSHING PAST IT. Money columns do not fit a
+   phone, and the alternative — dropping columns — hides the figures the page exists for.
+   Without this the table sets the panel's width and the whole layout runs off the screen.
+   min-width: 0 is what makes it work inside a flex or grid parent, where the default
+   `auto` minimum refuses to shrink below the content and the overflow never engages.
+
+   It costs an ⓘ inside it NOTHING, and that is worth knowing because it once cost a great
+   deal: `overflow-x: auto` computes `overflow-y` to `auto` as well, so this box clips on
+   both axes, and an in-flow balloon was both cut off and counted toward the scroll width it
+   was cut off by. The tip opens in the top layer now, which no ancestor's overflow can
+   reach. Put explanatory prose back in normal flow and all of that returns. */
+.table-wrap { overflow-x: auto; min-width: 0; }
+
+/* Read by assistive technology, not seen. Clipped rather than `display: none`, which would
+   take it out of the accessibility tree along with the pixels. */
+.vh {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
+/* The controls pp_board_filter() emits. min-width: 0 is what lets the search box shrink
+   inside the flex row instead of forcing it to wrap. */
+.board-filter {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--stripe);
+
+  & input[type="search"] { flex: 1 1 10rem; min-width: 0; }
+  & select { flex: 0 1 auto; width: auto; }
+  & .filter-count {
+    font-family: var(--mono); font-size: 12px; color: var(--chalk-dim);
+    margin-left: auto; white-space: nowrap;
+  }
+  & .filter-clear { flex: 0 0 auto; }
+  & .filter-count:empty + .filter-clear { margin-left: auto; }
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th {
+  text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--chalk-dim); font-weight: 600; padding: 9px 12px;
+  border-bottom: 1px solid var(--stripe);
+}
+td { padding: 8px 12px; border-bottom: 1px solid rgba(44,81,56,.5); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+td.money, th.money { font-family: var(--mono); text-align: right; }
+td.money { color: var(--brass); }
+
+/* THE TEAM STAYS PUT WHILE THE REST OF THE ROW SCROLLS. On a phone the money columns push
+   the action button past the right edge, and scrolling out to reach it took the team name
+   off the other side — so a Buy button belonged to a row you could no longer identify.
+   This is the horizontal half of the sticky header the market board already has, for the
+   same reason: a table you scroll sideways loses what its rows ARE.
+
+   Opt-in rather than universal, and the test is the table's SHAPE: the first column names
+   what the row is and the last one acts on it, so losing the first to reach the last leaves
+   a button with no subject. The market board, an owner's teams and the Desk's roster are
+   all that shape. A table read straight through — a ledger, the standings — is not, and
+   pinning a column there spends width on nothing.
+
+   The background is load-bearing, not decoration: `td` is transparent, so without it the
+   pinned cell and the row passing underneath are drawn on top of each other. It is the
+   panel's own colour, the same token the sticky header uses. The edge is a shadow because
+   `border-collapse: collapse` gives borders to the TABLE rather than the cell, so a border
+   here stays behind while the cell travels — which is why the sticky header uses an inset
+   shadow for its underline.
+
+   Three layers, and they must not tie: a row's pinned cell rides over its neighbours (1),
+   the sticky header rides over the rows (2, set by the component that makes it sticky),
+   and the corner cell — pinned both ways at once — rides over everything (3). Equal
+   z-index falls back to document order, which puts `tbody` on top of `thead`. */
+table.board th:first-child,
+table.board td:first-child {
+  position: sticky; left: 0;
+  background: var(--field-2);
+  box-shadow: 1px 0 0 var(--stripe);
+}
+table.board td:first-child { z-index: 1; }
+table.board th:first-child { z-index: 3; }
+
+/* A PINNED CELL MUST NOT BE TRANSLUCENT. `tr.pending` dims a whole row with `opacity`, and
+   the cell that stays put then shows the row sliding underneath it. Dim the CONTENTS
+   instead: identical to read, and the background stays solid. */
+table.board tr.pending > td:first-child { opacity: 1; }
+table.board tr.pending > td:first-child > * { opacity: .72; }
+
+/* A row that has been OFFERED but not settled — a pending invite in a roster, a platform
+   invite among the accounts. Dimmed so the eye reads the settled rows first, without
+   hiding who has been asked; the whole point of putting them in the same table is that
+   "who is here" includes who is on their way. */
+tr.pending > td { opacity: .72; }
+.rank-chip {
+  display: inline-block; min-width: 26px; text-align: center;
+  font-family: var(--mono); font-size: 12px; padding: 1px 4px;
+  border: 1px solid var(--stripe); border-radius: 3px; color: var(--chalk-dim);
+}
+.rank-chip.ranked { color: var(--field); background: var(--brass); border-color: var(--brass); font-weight: 700; }
+/* A team logo, bare: the dark-variant art is drawn for a dark ground. A fixed box, so a row
+   holds its shape before a lazy image arrives. */
+.team-logo { display: inline-flex; width: var(--logo); height: var(--logo); flex: none; }
+.team-logo img { width: 100%; height: 100%; object-fit: contain; }
+/* A logo beside its team's name, as one flex row: the disc centres on the name's line box
+   rather than sitting on its baseline, and the gap is a token rather than a typed space. */
+.team-id { display: inline-flex; align-items: center; gap: var(--sp-2); vertical-align: middle; }
+/* Where an unranked team sits on the computer composite. Deliberately quiet — smaller and
+   dimmer than the rank chip beside it, because it is information and not a price. */
+.composite {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .3px;
+  color: var(--chalk-dim);
+  white-space: nowrap;
+}
+.rankcell { white-space: nowrap; }
+
+.tag { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 2px 7px; border-radius: 3px; }
+.tag.house { background: var(--field-3); color: var(--chalk-dim); }
+.tag.mine { background: var(--brass); color: var(--field); font-weight: 700; }
+.tag.locked { background: rgba(208,90,69,.18); color: var(--red); }
+.tag.open { background: rgba(133,185,111,.15); color: var(--up); }
+/* An order queued for this window: not a state of the team, but a promise about it.
+   Brass, because it is something the owner did and can still undo. */
+.tag.queued { background: rgba(217,165,63,.16); color: var(--brass); font-weight: 700; }
+
+/* ---------- Gate tag ----------
+   Why an action is gated, beside the control rather than instead of it. Emitted by
+   gate_tag() so every panel says it the same way; see that function for why the default
+   is "held" rather than "blocked".
+
+   Lower case and not letter-spaced, unlike the other tags: this one carries a SENTENCE
+   ("it plays within the next 30 minutes"), and the uppercase treatment that suits a
+   one-word status is unreadable at that length. Wraps rather than truncating — a reason
+   an owner cannot finish reading is not a reason. */
+.tag.gate {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11.5px;
+  white-space: normal;
+  background: var(--field-3);
+  color: var(--chalk-dim);
+
+  & a { color: var(--brass); text-decoration: none; border-bottom: 1px solid transparent; }
+  & a:hover, & a:focus-visible { border-bottom-color: var(--brass); }
+}
+.tag.gate.locked { background: rgba(208,90,69,.18); color: var(--red); }
+
+/* ---------- Countdown ----------
+   How long until the next market opening, beside .tag because two panels want it and the
+   wording belongs to neither. Emitted by opening_countdown_tag(); assets/util.js re-formats
+   `.left` every second and owns the .soon / .due classes after load.
+
+   THE FIGURE IS MONO, like every other figure in the app — it changes under the reader's
+   eye, and a proportional font makes it jitter as the digits change width.
+
+   Colour is never the only signal: `.at` spells out the hour whatever the state, so an
+   owner who cannot separate brass from chalk still reads the same sentence. */
+.countdown {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--chalk-dim);
+
+  & .dot {
+    align-self: center;
+    width: 6px; height: 6px;
+    background: var(--chalk-dim);
+  }
+  & .left { font-family: var(--mono); color: var(--chalk); }
+  & .at { color: var(--chalk-dim); }
+
+  /* Under an hour: cancelling or reordering is still possible but nearly over, so it takes
+     the colour the app uses for something the owner did and can still undo. */
+  &.soon {
+    & .dot { background: var(--brass); animation: countdown-pulse 1.6s ease-in-out infinite; }
+    & .left { color: var(--brass); font-weight: 700; }
+  }
+  /* Past the moment. It settles on the next page load (catch_up_league()), so this is a
+     real state and not an error — red because nothing more can be queued into it. */
+  &.due {
+    & .dot { background: var(--red); animation: none; }
+    & .left { color: var(--red); font-weight: 700; }
+  }
+}
+/* Its own keyframe rather than the topbar's `draft-pulse`: this rule ships in the global
+   sheet and the topbar's does not load on every page, so borrowing it would fail silently
+   exactly where nothing draws attention to it. */
+@keyframes countdown-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .countdown .dot { animation: none; }
+}
+
+/* ---------- Scoreboard block ----------
+   One game, drawn the same way wherever it appears: the schedule and both Battle views.
+   It lives here rather than in a component because two sheets already carried byte-identical
+   copies of the live/final treatment and the schedule would have been the third.
+
+   Each state spells its word — colour is never the only signal, the same rule .countdown
+   follows one block up. `upcoming` has no chip at all: its signal is the absence of one
+   beside a kickoff still in the future.
+
+   NOTHING IS DIMMED WHEN A GAME ENDS. The FINAL chip already says so, and fading the row to
+   repeat it cost the two things worth reading — the score, and the chip carrying the signal
+   (Trevor). The old row had no chip, which is why it dimmed instead. */
+.cardblock {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  & .cardhead {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
+
+  /* .tag's geometry under its own name, like .job-state — a game's state is not a tag and
+     wants none of .tag's variants. */
+  & .gamestate {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 2px 7px;
+    border-radius: 3px;
+  }
+  & .gamestate.live {
+    background: rgba(217, 165, 63, .16);
+    color: var(--brass);
+    font-weight: 700;
+
+    /* countdown-pulse, not the topbar's identical draft-pulse: only this sheet is on every
+       page. Reduced motion leaves the dot solid rather than removing it. */
+    &::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--brass);
+      animation: countdown-pulse 1.6s ease-in-out infinite;
+    }
+  }
+  & .gamestate.final { background: var(--field-3); color: var(--chalk-dim); }
+
+  & .cardwhen { font-family: var(--mono); color: var(--chalk-dim); }
+  & .cardmeta {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--chalk-dim);
+  }
+
+  & .cardside {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+
+  /* The score column: pushed to its own axis so both rows align however long the names run,
+     and tabular so the figure does not jitter as digits change under a reader. */
+  & .pts {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 19px;
+    line-height: 1.1;
+    color: var(--chalk);
+    min-width: 2ch;
+    text-align: right;
+  }
+
+  /* Which side is at home — the one fact stacking the rows would otherwise drop. */
+  & .at {
+    min-width: 1ch;
+    font-family: var(--mono);
+    color: var(--chalk-dim);
+  }
+
+  & .nm { color: var(--chalk); }
+
+  /* Who holds it — the column an owner actually scans for, and the only per-viewer mark on
+     the block. */
+  & .own {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--chalk-dim);
+  }
+  & .own.me { color: var(--brass); font-weight: 700; }
+  & .own.free { color: var(--up); }
+
+  /* The line, on the home row it is quoted from. §11 settles the Battle on this number. */
+  & .ln { font-family: var(--mono); color: var(--chalk-dim); }
+
+  /* Where a thing went, right-aligned like a score: a trade's rows are movements rather
+     than sides, so each one carries its own from -> to and needs no column label. */
+  & .moves {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+
+    & .arrow { color: var(--chalk-dim); letter-spacing: 0; }
+  }
+
+  /* Cash that changed hands is a row like a team is, and reads as money. */
+  & .nm.amt { font-family: var(--mono); color: var(--brass); }
+
+  & .cardfoot { font-size: 12px; color: var(--chalk-dim); }
+  & .covering { color: var(--chalk-dim); }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .cardblock .gamestate.live::before { animation: none; }
+}
+
+/* ---------- Info tooltip ----------
+   A shared primitive, beside .tag and .panel, because it is an inline element any panel
+   may want — the dashboard uses it to keep explanatory prose off the page until someone
+   asks for it (Spencer's brief).
+
+   NO JAVASCRIPT, deliberately, and that survives being in the top layer: `popovertarget`
+   opens and `popovertargetaction="hide"` closes, both declarative, so the text is real DOM
+   with JS off, the CSP's script-src still carries no 'unsafe-inline', and Esc and
+   click-outside come free with the attribute.
+
+   A CARD, NOT A BALLOON, at every width — which is the browser's own default placement for
+   a popover and so the version with no positioning code in it. What it replaces needed a
+   viewport clamp, an above-or-below flip, an author's pin for the case the flip could not
+   see, a right-edge variant, and a pseudo-element bridging the 8px gap so a pointer could
+   reach the §-link without the thing closing on the way. Every one of those was in service
+   of anchoring to the icon. None of it is here.
+
+   NEVER SET `display` ON THE POPOVER ITSELF. The UA hides a closed one with
+   `[popover]:not(:popover-open) { display: none }`, and an author rule beats a UA rule
+   whatever its specificity — so a `display: block` here would put every tip on the page
+   permanently, which is the same trap the qualification note below describes. It does not
+   need one: `position: fixed` from the UA blockifies the span already.
+
+   QUALIFIED TO button ON PURPOSE. `info` is a word other markup reaches for — it was
+   already on a <dialog class="dialog info"> as a shape label, and an unqualified rule
+   setting `display: inline-block` overrode the UA's `dialog:not([open]) { display: none }`
+   and put a closed dialog on screen at page load. Author rules beat UA rules regardless
+   of specificity, so a bare utility class in a global stylesheet can silently take over
+   any element that happens to share the name. */
+button.info {
+  display: inline-block;
+  width: 15px; height: 15px; line-height: 13px;
+  margin-left: 5px; padding: 0;
+  text-align: center;
+  font-family: inherit; font-size: 10px; font-style: normal; font-weight: 700;
+  color: var(--chalk-dim);
+  background: none;
+  border: 1px solid var(--stripe); border-radius: 50%;
+  cursor: pointer; vertical-align: middle;
+}
+button.info:hover, button.info:focus-visible {
+  color: var(--field); background: var(--brass); border-color: var(--brass);
+}
+
+/* THE SAME FRAME AS dialog.dialog, and worth keeping that way: one overlay treatment for
+   the app whether or not the thing overlaying is modal. The mechanisms differ because what
+   they are for differs — a <dialog> traps focus, which is right for a form and wrong for a
+   one-paragraph aside — but a reader should not be able to tell two systems apart. */
+.tip[popover] {
+  margin: auto;                    /* the UA centres it; stated so it survives a reset */
+  padding: 0;
+  width: min(23rem, calc(100vw - 2rem));
+  color: var(--chalk);
+  background: var(--field-2);
+  border: 2px solid var(--stripe);
+  border-radius: 0;                /* pixel-sharp, like .panel and .dialog */
+  box-shadow: var(--hard);
+  /* RESETS, all five: the tip is a paragraph of prose emitted inside a column heading, a
+     money cell or a chip, and inherits whatever they set. `white-space` is in the list for
+     the same reason as the rest — anywhere it is anchored inside `nowrap`, the sentence
+     runs out as one unbroken line. */
+  text-align: left; text-transform: none; letter-spacing: normal; white-space: normal;
+  font-size: 12.5px; font-weight: 400; font-style: normal; line-height: 1.5;
+}
+.tip[popover]::backdrop { background: rgba(0, 0, 0, .55); }
+
+.tip .tip-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 10px 14px;
+  font-family: var(--display); font-size: .95rem;
+  border-bottom: 1px solid var(--stripe);
+  background-image: var(--scanline);
+}
+.tip .tip-body { display: block; padding: 12px 14px; }
+.tip a { color: var(--brass); }
+
+/* The quiet X of dialog.dialog, same size and same colour, because it is the same
+   affordance: a card needs an explicit way out where an in-flow balloon did not. */
+.tip .x {
+  background: none; border: 0; color: var(--chalk-dim);
+  font-family: inherit; font-size: 1.1rem; line-height: 1; cursor: pointer; padding: 0 2px;
+}
+.tip .x:hover { color: var(--chalk); }
+
+/* Without the attribute there is no top layer and no closed state, so the card would render
+   inline — 130 of them down the market board. Fall back to plain prose instead. */
+@supports not selector(:popover-open) {
+  .tip[popover] { width: auto; border: 0; box-shadow: none; background: none; }
+  .tip .x { display: none; }
+}
+
+/* ---------- Controls ---------- */
+/* Buttons carry the retro "press start" treatment: pixel-sharp corners, a hard
+   drop shadow, and a press-down on :active (translate into the shadow). */
+button, .btn {
+  font-family: var(--body); font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: 0; cursor: pointer;
+  border: 2px solid var(--brass); background: transparent; color: var(--brass);
+  box-shadow: var(--hard-sm);
+  transition: transform .05s ease, box-shadow .05s ease, background .12s ease;
+}
+button:hover, .btn:hover { background: rgba(217,165,63,.12); }
+button:active { transform: translate(3px, 3px); box-shadow: 0 0 0 rgba(0,0,0,0); }
+button.primary { background: var(--brass); color: var(--field); }
+button.primary:hover { background: #e6b756; }
+button.danger { border-color: var(--red); color: var(--red); }
+button.danger:hover { background: rgba(208,90,69,.12); }
+button.small { padding: 3px 9px; font-size: 12px; box-shadow: var(--hard-sm); }
+button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; transform: none; }
+/* BUSY IS NOT REFUSED. A control with a request in flight is disabled so it cannot be
+   fired twice, but "not-allowed" is the wrong sentence for something that is working, and
+   at .4 the spinner is too faint to read. Same specificity as the rule above, so it is
+   source order that makes this win — keep it directly beneath. Set by the transport in
+   util.js; nothing else writes aria-busy. */
+button[aria-busy="true"] {
+  opacity: .7; cursor: progress;
+  display: inline-flex; align-items: center; gap: .45em;
+}
+button[aria-busy="true"]::before {
+  content: ""; width: .7em; height: .7em; flex: none;
+  border: 2px solid currentColor; border-top-color: transparent;
+  animation: busy-spin .8s steps(8) infinite;
+}
+@keyframes busy-spin { to { transform: rotate(360deg); } }
+/* Static ring rather than no ring: the state has to stay legible without the motion. */
+@media (prefers-reduced-motion: reduce) {
+  button[aria-busy="true"]::before { animation: none; }
+}
+a.btn { display: inline-block; text-decoration: none; }
+a.btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 rgba(0,0,0,0); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--brass); outline-offset: 2px;
+}
+
+input, select, textarea {
+  font-family: var(--body); font-size: 14px;
+  background: var(--field); color: var(--chalk);
+  border: 1px solid var(--stripe); border-radius: 0;
+  padding: 8px 10px; width: 100%;
+}
+label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px;
+        color: var(--chalk-dim); margin: 10px 0 4px; }
+.row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+.row > div { flex: 1; min-width: 120px; }
+
+/* ---------- Dialogs ----------
+   One overlay treatment for the whole app, built on the native <dialog>: it brings
+   modality, focus trapping, ESC-to-close and a ::backdrop with no library and no build
+   step, which is the same reason we use curl rather than an SDK.
+
+   The CONTENT is always server-rendered inside the <dialog> by the component that owns
+   it — nothing here builds markup in JS, so interpolation still goes through PHP's
+   htmlspecialchars rather than a string concatenation someone forgot to escape.
+
+   Two shapes, same frame: an ACTION dialog (a form, confirm/cancel, closes on a
+   successful post) and an INFO dialog (context for a pane, one Close). */
+dialog.dialog {
+  padding: 0;
+  border: 2px solid var(--stripe);
+  border-radius: 0;                 /* pixel-sharp, like .panel */
+  box-shadow: var(--hard);
+  background: var(--field-2);
+  color: var(--chalk);
+  width: min(560px, calc(100vw - 2rem));
+}
+dialog.dialog::backdrop { background: rgba(0, 0, 0, .55); }
+
+dialog.dialog > header {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--stripe);
+  background-image: var(--scanline);
+}
+dialog.dialog > header h3 { margin: 0; font-family: var(--display); font-size: 1rem; }
+dialog.dialog > .body { padding: 14px 16px; }
+dialog.dialog > .body p.muted:last-child { margin-bottom: 0; }
+dialog.dialog > footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--stripe);
+}
+/* The close affordance in the header is a quiet X; the real actions live in the footer. */
+dialog.dialog .x {
+  background: none; border: 0; color: var(--chalk-dim);
+  font-size: 1.1rem; line-height: 1; cursor: pointer; padding: 0 2px;
+}
+dialog.dialog .x:hover { color: var(--chalk); }
+
+/* ---------- Status dot ---------- */
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
+.dot.open { background: var(--up); box-shadow: 0 0 8px var(--up); }
+
+/* ---------- Misc ---------- */
+.muted { color: var(--chalk-dim); font-size: 13px; }
+.list-item { padding: 10px 16px; border-bottom: 1px solid rgba(44,81,56,.5); font-size: 13.5px; }
+.list-item:last-child { border-bottom: 0; }
+.list-item .actions { margin-top: 6px; display: flex; gap: 8px; }
+
+/* ---------- Game grid ----------
+   Scoreboard blocks across the full width of a page rather than stacked down one edge of it.
+   The block aligns its two scores on the right so they read as a scoreboard, so in a
+   1200px panel a typical row put ~1000px between the team and its own score; in a ~390px
+   column that is ~180px, and three games fit where one did.
+
+   Placed after .list-item deliberately — these override its single bottom border with a box
+   on all four sides, and at equal specificity the later rule is the one that wins.
+
+   min(340px, 100%) rather than a bare 340px: auto-fill would otherwise lay a 340px track in
+   a 320px phone and push the page sideways.
+
+   IT REPLACES `.body`, it does not sit inside one. A panel body's only job is padding, and
+   `.panel .body.flush` — the pairing every self-padding list uses — sets it to 0 at (0,3,0),
+   which silently beat this rule and put the cards against the panel border while the gap
+   between them worked fine. Out-specifying that would have worked; not competing is better.
+
+   ONE token for the gutter, so the space around the cards is the space between them and the
+   grid sits evenly in its panel (Trevor) — a single value rather than two equal ones, because
+   not drifting apart is the point. */
+.cardgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  align-items: start;
+}
+.cardgrid > *,
+.cardgrid > *:last-child {
+  border: 1px solid rgba(44, 81, 56, .5);
+}
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--field-3); border: 1px solid var(--brass); color: var(--chalk);
+  padding: 10px 20px; border-radius: 5px; font-size: 14px; z-index: 50;
+  max-width: 90vw;
+}
+.toast.error { border-color: var(--red); }
+
+/* THE PAGE-TOP BAR, raised while any request is in flight. It is the backstop for a
+   request that did not come from a button — the league switcher is a <select>, and there
+   is nothing there to put a spinner in. Created and removed by util.js the way a toast
+   is, so no page has to carry the markup and no component has to own it.
+
+   Element-qualified, per the collision warning above the .info block: a bare .loading-bar
+   in the one stylesheet on every page would take over anything that shared the name.
+   z-index clears the ladder in use — topbar 5, tooltip 40, toast 50.
+
+   The march is a background-position animation over a fixed-size gradient, so it never
+   touches layout; a width animation on a bar pinned across the viewport would. */
+div.loading-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 60;
+  background: repeating-linear-gradient(90deg, var(--brass) 0 12px, transparent 12px 24px);
+  background-size: 24px 100%;
+  animation: loading-march .6s steps(6) infinite;
+}
+@keyframes loading-march { to { background-position: 24px 0; } }
+/* Solid rather than absent: with the motion off, the bar is still the only page-level
+   sign that something is happening. */
+@media (prefers-reduced-motion: reduce) {
+  div.loading-bar { background: var(--brass); animation: none; }
+}
+
+/* ---------- Login ---------- */
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.login-card {
+  width: 100%; max-width: 360px; background: var(--field-2);
+  border: 2px solid var(--stripe); border-top: 4px solid var(--brass);
+  border-radius: 0; box-shadow: var(--hard); padding: 30px;
+}
+.login-card .wordmark { font-size: 26px; display: block; text-align: center; margin-bottom: 4px; }
+.login-card .tagline {
+  text-align: center; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--chalk-dim); margin-bottom: 24px;
+}
+.login-card button { width: 100%; margin-top: 18px; }
+.login-error { color: var(--red); font-size: 13px; margin-top: 10px; text-align: center; }
+/* Secondary link under an auth card ("Forgot password?", "← Back to sign in"). */
+.login-card .alt-link { display: inline-block; margin-top: 10px; font-size: 13px; }
+.login-card .form-msg { margin-top: 12px; }
+
+/* ---------- Admin tabs ---------- */
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 22px; }
+.tabs button { border-color: var(--stripe); color: var(--chalk-dim); }
+.tabs button.active { border-color: var(--brass); color: var(--brass); background: rgba(217,165,63,.08); }
+.tabpane { display: none; }
+.tabpane.active { display: block; }
+
+/* ---------- League economy additions ---------- */
+/* .cards / .card is the shared summary-tile look: used by the dashboard's
+   My Portfolio & Funds panel and the Commissioner Desk economy tab. */
+.mono { font-family: var(--mono); }
+.cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.card {
+  background: var(--field-3); border: 2px solid var(--stripe); border-radius: 0;
+  box-shadow: var(--hard-sm); padding: 10px 14px; flex: 1; min-width: 150px;
+}
+.card .label, .house-balance .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--chalk-dim); }
+.card .amount { font-family: var(--mono); font-size: 20px; color: var(--brass); font-weight: 600; margin-top: 4px; }
+.disclaimer {
+  margin-top: 12px; padding: 10px 12px; font-size: 12px; line-height: 1.5;
+  color: var(--chalk-dim); background: rgba(217,165,63,.06);
+  border: 1px solid var(--stripe); border-left: 3px solid var(--brass); border-radius: 0;
+}
+textarea {
+  width: 100%; background: var(--field); color: var(--chalk); border: 1px solid var(--stripe);
+  border-radius: 0; padding: 8px 10px; font-family: var(--body); font-size: 14px; margin-top: 4px;
+}
+/* Compact select inside the topbar (the league switcher). */
+.topbar select { width: auto; background: var(--field-3); padding: 2px 6px; }

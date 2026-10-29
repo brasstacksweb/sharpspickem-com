@@ -1,0 +1,11 @@
+/* <pp-trade-log> — the full trade history. Uses global .panel/.tag/.list-item. */
+.trade-log {
+  display: block;
+
+  & .trade {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  & .terms { margin-top: 4px; font-style: italic; }
+}

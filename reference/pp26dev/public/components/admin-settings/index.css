@@ -1,0 +1,70 @@
+/* <pp-admin-settings> — the generated game-settings grid; the economy form uses
+   the global .row/.panel rules. */
+.admin-settings {
+  display: block;
+
+  & .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px 16px;
+  }
+
+  & .settings-grid label { margin-top: 0; }
+
+  /* Long-form settings, two per row: "how to pay" and "who to pay" belong side by
+     side, and a textarea in a 210px grid cell is unusable. */
+  & .settings-wide {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px 16px;
+    margin-top: 10px;
+    align-items: start;
+
+    & label { margin-top: 0; }
+    & textarea, & input { width: 100%; }
+  }
+
+  & .save-row { margin-top: 14px; }
+}
+
+/* Settings are grouped so the Market Window reads as one thing rather than four
+   fields that happen to sit next to each other. */
+.admin-settings {
+  & .setting-group {
+    margin-bottom: 18px;
+
+    & h3 {
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--chalk-dim);
+      margin: 0 0 6px;
+    }
+  }
+
+  /* A locked field is visibly out of play, not just inert. */
+  & .setting.locked {
+    opacity: 0.55;
+
+    & label { text-decoration: line-through; }
+  }
+
+  & .lock-note {
+    font-size: 12px;
+    color: var(--chalk-dim);
+    margin: 6px 0 0;
+  }
+}
+
+/* A league configured below the viable buy-in is a season that stalls in week one, so
+   this reads as a warning rather than a hint — but it never blocks saving: a
+   commissioner mid-setup may legitimately pass through the state. */
+.admin-settings .buyin-warn {
+  background: rgba(208, 90, 69, .12);
+  border: 1px solid var(--stripe);
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+
+  & b { color: var(--red); }
+}

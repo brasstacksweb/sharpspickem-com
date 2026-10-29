@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Sharps Pick 'Em">
+  <rect width="512" height="512" fill="#0d2318"/>
+  <g transform="translate(256,256) scale(0.62) translate(-256,-256)">
+    <rect x="80" y="96" width="352" height="320" fill="#000" fill-opacity="0.40"/>
+    <rect x="68" y="84" width="352" height="320" fill="#143020" stroke="#2c5138" stroke-width="10"/>
+    <rect x="68" y="384" width="352" height="20" fill="#d9a53f"/>
+    <text x="244" y="290" font-family="Arial Black, Helvetica, sans-serif" font-size="176"
+          font-weight="900" letter-spacing="-6" text-anchor="middle" fill="#d9a53f">SP</text>
+  </g>
+</svg>

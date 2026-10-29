@@ -1,0 +1,17 @@
+/* <pp-site-header> — borrows the global .topbar marquee look; one row only. */
+.site-header {
+  display: block;
+
+  & .bar-top {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  & .acts {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+  }
+}

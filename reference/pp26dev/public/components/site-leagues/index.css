@@ -1,0 +1,8 @@
+/* <pp-site-leagues> — uses the global .panel/table/.dialog styles; only the request queue's
+   action column needs saying. `tr.pending` is not used here: a league request is not a row in
+   the listing, it is its own queue. */
+.site-leagues {
+  display: block;
+
+  & td.acts { white-space: nowrap; text-align: right; }
+}

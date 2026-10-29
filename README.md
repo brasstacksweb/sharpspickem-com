@@ -1,0 +1,21 @@
+# Sharps Pick 'Em — Erlang
+
+The Erlang/OTP port of Sharps Pick 'Em, a college football team-ownership game, and the
+start of its multi-sport version.
+
+**Status: not started.** This repository holds the plan and a frozen copy of the PHP app
+to port from. Read [`AGENTS.md`](AGENTS.md) first: it is the conventions, the plan and the
+map, for people and coding agents alike.
+
+## Requirements
+
+- Erlang/OTP 27 or later
+- rebar3
+
+## Layout
+
+| Path | What it is |
+|---|---|
+| `AGENTS.md` | conventions and plan |
+| `reference/pp26dev/` | selected files from the PHP app, frozen at the commit named in `AGENTS.md`; read-only |
+| `golden/` | recorded PHP behaviour the port must reproduce (not yet recorded) |

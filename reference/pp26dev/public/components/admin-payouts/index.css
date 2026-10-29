@@ -1,0 +1,29 @@
+/* <pp-admin-payouts> — uses global .panel/.tag; this styles the payout rows. */
+.admin-payouts {
+  display: block;
+
+  & .payout-amount { float: right; font-family: var(--mono); color: var(--brass); }
+}
+
+/* The settlement panel closes the season, so it reads as a conclusion rather than
+   another form: the owner list is the thing the Commissioner works from when paying
+   people, and a negative balance is money owed the other way. */
+.admin-payouts {
+  & .settle .not-ready {
+    background: rgba(217, 165, 63, .12);
+    border: 1px solid var(--stripe);
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 13px;
+
+    & b { color: var(--brass); }
+    & ul { margin: 6px 0 0; padding-left: 18px; }
+  }
+
+  & .settle-list {
+    margin-top: 12px;
+
+    & td.money { font-family: var(--mono); color: var(--brass); }
+    & td.money.owes { color: var(--red); }
+  }
+}

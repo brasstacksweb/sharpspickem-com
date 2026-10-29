@@ -1,0 +1,3 @@
+/* <pp-ticker> — the marquee itself is styled by the global .ticker-wrap/.ticker/
+   .tick-item rules (with the reduced-motion-aware scroll animation) in style.css. */
+pp-ticker { display: block; }

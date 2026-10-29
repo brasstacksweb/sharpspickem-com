@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<!--
+  /how-to-play/ — the short version, for someone who has never played. Public and static
+  for the same reasons /rules/ is: a prospective owner can read it without an account, and
+  a page with no database and no session can never leak league state.
+
+  NOT A SOURCE OF TRUTH. /rules/ is, and it is the only one. Everything here summarises a
+  section there and links to it, so a rule change edits /rules/ FIRST and this page after.
+  That subordination is enforced rather than asserted: ConventionsTest checks that every
+  section cited exists, and that every figure published outside a `.example` block appears
+  in the Rulebook too. A worked example may carry arithmetic of its own; a RULE may not be
+  stated here in terms the Rulebook does not use. Without that check a summary drifts until
+  it describes a market that does not exist.
+
+  The test for anything new (Spencer's): does a new owner need to know this before they can
+  start playing? If not it belongs in /rules/ or in the app's contextual UI. A guide that
+  answers every situational question is a second copy of the Rulebook.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to Play — Sharps Pick 'Em</title>
+<meta name="description" content="The short version of Sharps Pick 'Em: draft college football teams, ride the polls, battle rival owners, and cash in at the playoff.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Graduate&amp;family=Barlow:wght@400;600;700&amp;family=IBM+Plex+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  /* Deliberately the same furniture as /rules/: this is the same KIND of document —
+     a long public page arrived at by link — and giving it a second visual language
+     would say the two are unrelated when one is a summary of the other. */
+  .spec-wrap { max-width: 820px; margin: 0 auto; padding: 32px 22px 96px; }
+  .spec-head { border-bottom: 3px solid var(--brass); padding-bottom: 20px; margin-bottom: 8px; }
+  .spec-head h1 { font-family: var(--display); font-size: 34px; letter-spacing: 1px; margin: 0 0 6px; }
+  .spec-head .sub { color: var(--chalk-dim); font-size: 15px; }
+  .spec-wrap h2 {
+    font-family: var(--display); font-size: 23px; letter-spacing: .5px;
+    color: var(--brass); margin: 52px 0 4px; padding-top: 20px;
+    border-top: 1px solid var(--stripe);
+  }
+  .spec-wrap h2:first-of-type { border-top: 0; }
+  .spec-wrap h2 .n { color: var(--chalk-dim); margin-right: 10px; }
+  .spec-wrap p, .spec-wrap li { color: var(--chalk); }
+  .spec-wrap ul, .spec-wrap ol { padding-left: 22px; }
+  .spec-wrap li { margin: 5px 0; }
+  .spec-wrap table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  .spec-wrap th, .spec-wrap td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--stripe); }
+  .spec-wrap th { color: var(--chalk-dim); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; }
+  .spec-wrap td.money, .spec-wrap th.money { font-family: var(--mono); text-align: right; }
+  .toc { background: var(--field-2); border: 1px solid var(--stripe); border-radius: 6px; padding: 18px 22px; margin: 28px 0; }
+  .toc h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--chalk-dim); }
+  .toc ol { margin: 0; columns: 2; column-gap: 32px; }
+  .toc a { text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .callout {
+    background: var(--field-2); border-left: 3px solid var(--brass);
+    padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;
+  }
+  .callout p { margin: 4px 0; font-size: 14px; }
+  .callout .tag {
+    display: inline-block; font-size: 11px; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--brass); font-weight: 700; margin-bottom: 2px;
+  }
+  .example { background: var(--field-2); border: 1px solid var(--stripe); border-radius: 6px; padding: 14px 18px; margin: 16px 0; }
+  .example h4 { margin: 0 0 6px; color: var(--brass); font-size: 15px; }
+
+  /* The one-line refrains ("#1 = $26 ... Unranked = $0"). Mono because they are money,
+     centred because they are the sentence the section exists to leave behind. */
+  .refrain {
+    font-family: var(--mono); text-align: center; color: var(--brass);
+    font-size: 15px; letter-spacing: .5px; margin: 18px 0; line-height: 1.9;
+  }
+  .refrain b { color: var(--chalk); font-weight: 600; }
+  .strap { text-align: center; color: var(--chalk-dim); font-style: italic; margin: 18px 0; }
+
+  /* The five verbs. A table would imply a grid of columns that isn't there. */
+  .verbs { margin: 14px 0; }
+  .verbs dt {
+    font-family: var(--mono); font-weight: 600; color: var(--brass);
+    letter-spacing: 1px; font-size: 13px; margin-top: 12px;
+  }
+  .verbs dd { margin: 2px 0 0; padding-left: 0; }
+
+  /* Section -> Rulebook. Every section carries one; it is the whole point of the page. */
+  .cite { font-size: 13px; color: var(--chalk-dim); margin: 14px 0 0; }
+  .cite a { text-decoration: none; }
+  .cite a:hover, .cite a:focus-visible { text-decoration: underline; }
+
+  .closer { border-top: 3px solid var(--brass); margin-top: 56px; padding-top: 22px; }
+  .closer h2 { font-family: var(--display); font-size: 26px; color: var(--brass); border-top: 0; margin: 0 0 8px; padding-top: 0; text-align: center; letter-spacing: 1px; }
+
+  @media (max-width: 620px) { .toc ol { columns: 1; } }
+
+  /* Sticky for the same reason /rules/ is: this page is arrived at from a link and
+     read at depth, so the way out has to be on screen at every depth. Plain anchors —
+     no JavaScript here either. */
+  .topbar { position: sticky; top: 0; }
+  .rules-nav { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
+  .rules-nav a { text-decoration: none; white-space: nowrap; }
+  .rules-nav a:hover, .rules-nav a:focus-visible { text-decoration: underline; }
+
+  .spec-wrap h2, .toc { scroll-margin-top: 74px; }
+
+  .spec-wrap h2:target { animation: land 1.8s ease-out; }
+  @keyframes land {
+    from { background: rgba(217,165,63,.22); box-shadow: -12px 0 0 rgba(217,165,63,.22); }
+    to   { background: transparent; box-shadow: -12px 0 0 transparent; }
+  }
+
+  /* This bar carries one more item than the Rulebook's, so it gives up the label
+     sooner — a two-line sticky bar eats a phone. */
+  @media (max-width: 720px) { .topbar .who { display: none; } }
+  @media (max-width: 620px) {
+    .topbar { padding: 10px 14px; gap: 12px; }
+    .wordmark { font-size: 17px; }
+    .rules-nav { gap: 13px; font-size: 13px; }
+    .spec-wrap h2, .toc { scroll-margin-top: 60px; }
+    .refrain { font-size: 13px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spec-wrap h2:target { animation: none; border-left: 3px solid var(--brass); padding-left: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="wordmark">SHARPS <span>PICK 'EM</span></span>
+  <span class="who">How to Play</span>
+  <nav class="rules-nav" aria-label="How to Play">
+    <a href="#toc">Contents</a>
+    <a href="../rules/">Official Rulebook</a>
+    <a href="../home">&larr; The league</a>
+  </nav>
+</div>
+
+<div class="spec-wrap">
+
+  <div class="spec-head">
+    <h1>How to Play</h1>
+    <div class="sub">Fantasy college football meets the stock market.</div>
+  </div>
+
+  <p>Instead of drafting players, you draft college football teams and manage them like
+  investments throughout the season. Draft sleepers. Buy teams before they rise. Sell at the
+  right time. Trade with other owners. Battle head-to-head when your teams meet on the field.
+  And position yourself to own the teams that make a run through the College Football Playoff.</p>
+
+  <p class="strap">Your goal: generate the most Alpha and win the league.</p>
+
+  <div class="callout">
+    <span class="tag">This is the short version</span>
+    <p>Everything below is a summary. The
+    <a href="../rules/">Official Rulebook</a> is the complete and governing text, and where
+    the two differ, <strong>the Rulebook is the rule</strong>. Each section here links to the
+    one it summarises, so you can go straight to the detail when you need it.</p>
+  </div>
+
+  <div class="toc" id="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#s1">Draft Your Portfolio</a></li>
+      <li><a href="#s2">Rankings Are the Market</a></li>
+      <li><a href="#s3">Manage Your Portfolio</a></li>
+      <li><a href="#s4">House Liquidity Gets Tighter</a></li>
+      <li><a href="#s5">Blind Bidding</a></li>
+      <li><a href="#s6">Battles</a></li>
+      <li><a href="#s7">Battles Build the Prize Pool</a></li>
+      <li><a href="#s8">The College Football Playoff</a></li>
+      <li><a href="#s9">Playoff Teams Still Trade</a></li>
+      <li><a href="#s10">Generate Alpha</a></li>
+      <li><a href="#s11">Know When You Can Act</a></li>
+      <li><a href="#s12">One Final Settlement</a></li>
+    </ol>
+  </div>
+
+  <h2 id="s1"><span class="n">1.</span>Draft Your Portfolio</h2>
+  <p>Every season begins with a <strong>snake draft</strong>. Each owner builds a portfolio of
+  college football teams &mdash; five by default, though your Commissioner may set the limit
+  anywhere from four to eight before the draft, after which it is fixed for the season. You can
+  draft any FBS team.</p>
+
+  <table>
+    <thead>
+      <tr><th>Rank</th><th class="money">Market Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>#1</td><td class="money">$26</td></tr>
+      <tr><td>#2</td><td class="money">$25</td></tr>
+      <tr><td>#3</td><td class="money">$24</td></tr>
+      <tr><td>&hellip;</td><td class="money">&hellip;</td></tr>
+      <tr><td>#24</td><td class="money">$3</td></tr>
+      <tr><td>#25</td><td class="money">$2</td></tr>
+      <tr><td>Unranked</td><td class="money">FREE</td></tr>
+    </tbody>
+  </table>
+
+  <p>Only teams in the preseason AP Top 25 cost anything to draft; the whole Top 25 totals
+  <strong>$350</strong>. Spend big on a national-title contender &mdash; or take a shot on an
+  unranked sleeper for nothing.</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s5">Rulebook &sect;5 &mdash; The Draft</a></p>
+
+  <h2 id="s2"><span class="n">2.</span>Rankings Are the Market</h2>
+  <p>Team values change throughout the season based on the national rankings. Before the CFP
+  Rankings begin, Sharps uses the AP Poll. Once the CFP Rankings are released, Sharps uses the
+  CFP Rankings for the remainder of the season.</p>
+
+  <p class="refrain">#1 = $26 &rarr; #25 = $2 &rarr; Unranked = $0</p>
+
+  <p>If you acquire the #18 team and it climbs to #6, you've created value. If you grab an
+  unranked team for free and it breaks into the Top 25, you've turned a free acquisition into a
+  valuable asset. Rankings can move against you too.</p>
+
+  <p class="strap">Buy low. Sell high. Find the teams everyone else missed.</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s3">Rulebook &sect;3 &mdash; The League Economy</a></p>
+
+  <h2 id="s3"><span class="n">3.</span>Manage Your Portfolio</h2>
+  <dl class="verbs">
+    <dt>BUY</dt>
+    <dd>Purchase an available ranked team from the House at its Market Value.</dd>
+    <dt>SELL</dt>
+    <dd>Sell an eligible ranked team back to the House at its Market Value.</dd>
+    <dt>ADD</dt>
+    <dd>Pick up an available unranked team for free.</dd>
+    <dt>DROP</dt>
+    <dd>Remove a team from your portfolio.</dd>
+    <dt>TRADE</dt>
+    <dd>Make deals directly with another owner.</dd>
+  </dl>
+
+  <p>When you deal with the House, the rankings determine Market Value. When you deal with
+  another owner, it's a free market: trade a team for cash, team for team, or negotiate whatever
+  deal both owners accept. A trade needs no approval &mdash; if both owners agree, it's done.</p>
+
+  <p class="cite">Full detail:
+  <a href="../rules/#s7">Rulebook &sect;7 &mdash; Buying</a>,
+  <a href="../rules/#s8">&sect;8 &mdash; Selling</a>,
+  <a href="../rules/#s9">&sect;9 &mdash; Trades</a></p>
+
+  <h2 id="s4"><span class="n">4.</span>House Liquidity Gets Tighter</h2>
+  <p>The House won't provide unlimited liquidity forever. As the season progresses, House
+  buybacks become increasingly restrictive:</p>
+
+  <table>
+    <thead>
+      <tr><th>From</th><th>The House buys</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>The start of the season</td><td>Any team in the Top 25</td></tr>
+      <tr><td>The first buyback date</td><td>Only teams ranked 1&ndash;12</td></tr>
+      <tr><td>The second buyback date</td><td>Nothing at all</td></tr>
+    </tbody>
+  </table>
+
+  <p>Both dates are set by your Commissioner before the draft and fixed once it begins. The
+  second one falls <strong>before conference championship week</strong> &mdash; so the House
+  stops buying while the regular season is still being played, not at the door of the playoff.
+  That creates one of the biggest decisions in Sharps: <strong>Sell or Hold?</strong> Take the
+  guaranteed Market Value while the House is still buying, or hold because you think your team is
+  headed for the CFP?</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s8">Rulebook &sect;8 &mdash; Selling Teams to the House</a></p>
+
+  <h2 id="s5"><span class="n">5.</span>Blind Bidding</h2>
+  <p>Want a ranked House-owned team that isn't currently available? Place a <strong>Blind
+  Bid</strong>. Your bid must be at least the team's current Market Value &mdash; anything below
+  it is rejected. Other owners can't see your offer. When the market next opens, all bids are
+  opened at once and the highest valid bid wins. If two owners submit the same winning bid, the
+  earlier bid wins.</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s7">Rulebook &sect;7 &mdash; Buying Teams from the House</a></p>
+
+  <h2 id="s6"><span class="n">6.</span>Battles</h2>
+  <p>Whenever one of your teams plays a team owned by another owner, a <strong>Battle</strong>
+  appears automatically. Nobody proposes it and nobody accepts it &mdash; the matchup itself
+  creates it.</p>
+
+  <p class="refrain">Owner A <b>$5</b> &middot; Owner B <b>$5</b> &middot; Battle Pot <b>$10</b></p>
+
+  <p>It <strong>binds 30 minutes before kickoff</strong>, when the line freezes. Until then
+  nothing has been staked and neither team is held &mdash; you can still sell, drop or trade the
+  team, and the matchup dissolves with it. Hold the team through the freeze and the Battle is
+  yours: the stake comes out, both teams come off the market, and you cannot decline.</p>
+
+  <p><strong>You can always walk away from a Battle. You just cannot keep the team and walk
+  away.</strong> Giving a team up to avoid a matchup is allowed &mdash; it costs you the team.</p>
+
+  <p>If either owner cannot cover the stake at the freeze, the Battle does not bind and there is
+  no second attempt. That is what the reserve is for: it holds a stake behind every game your
+  teams play, all week, so you are never short by surprise.</p>
+
+  <p>The winner is determined <strong>against the spread</strong>, using the official Battle line
+  locked <strong>30 minutes</strong> before kickoff. Your team doesn't necessarily have to win
+  the football game &mdash; it has to cover. If no line is quoted, the game settles straight up.
+  Owners may raise the stakes before kickoff if both agree.</p>
+
+  <p>A push refunds both stakes and the House takes nothing. A canceled game or a no contest is
+  refunded too, though a game that never gets a final score can't settle itself &mdash; your
+  Commissioner records those by hand.</p>
+
+  <p>Battles run through the regular season and the conference championship games. There are
+  <strong>no Battles in bowl games or in the College Football Playoff</strong>.</p>
+
+  <p>Because Battles are automatic, a portion of your Available Funds is held in reserve
+  throughout the season to cover potential Battle stakes.</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s11">Rulebook &sect;11 &mdash; Battles</a></p>
+
+  <h2 id="s7"><span class="n">7.</span>Battles Build the Prize Pool</h2>
+  <p>A House Fee &mdash; <strong>10%</strong> of the pot by default, unless your Commissioner set
+  it otherwise before the draft &mdash; is taken from every settled Battle and added to the House
+  Account. There is no fee on a push, because there is no pot to split. The House Account
+  ultimately becomes the league's College Football Playoff Prize Pool, so every Battle helps make
+  the postseason more valuable.</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s10">Rulebook &sect;10 &mdash; The House Account</a></p>
+
+  <h2 id="s8"><span class="n">8.</span>The College Football Playoff</h2>
+  <p>At the end of the regular season &mdash; once conference championship week is done and no
+  further Battles can be created &mdash; the House Account balance is recorded as the
+  <strong>Prize Pool</strong>. Owners earn money every time one of their teams advances.</p>
+
+  <table>
+    <thead>
+      <tr><th>CFP result</th><th class="money">Payout</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>First-round bye</td><td class="money">3%</td></tr>
+      <tr><td>First-round win</td><td class="money">3%</td></tr>
+      <tr><td>Quarterfinal win</td><td class="money">6%</td></tr>
+      <tr><td>Semifinal win</td><td class="money">11%</td></tr>
+      <tr><td>National Championship</td><td class="money">30%</td></tr>
+    </tbody>
+  </table>
+
+  <p class="strap">A championship run earns 50% of the Prize Pool.</p>
+
+  <div class="example">
+    <h4>Worked example</h4>
+    <p>With a $500 Prize Pool: 3% = $15, 6% = $30, 11% = $55, and 30% = $150. A full
+    championship run is worth $250.</p>
+  </div>
+
+  <p>And you don't necessarily have to draft the eventual champion.</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s12">Rulebook &sect;12 &mdash; College Football Playoff Payouts</a></p>
+
+  <h2 id="s9"><span class="n">9.</span>Playoff Teams Still Trade</h2>
+  <p>Ownership doesn't freeze when the CFP begins. Teams can still change hands between playoff
+  games, and whoever owns the team when it advances gets the payout.</p>
+
+  <p>By this point the House has stopped buying (&sect;4 above), so another owner is the only
+  buyer there is. Maybe you want guaranteed cash rather than risking elimination &mdash; sell it
+  to another owner. Maybe another owner thinks your team has a real shot at the National
+  Championship &mdash; buy it from them. You're negotiating the value of that team's remaining
+  playoff run.</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s9">Rulebook &sect;9 &mdash; Owner-to-Owner Trades</a></p>
+
+  <h2 id="s10"><span class="n">10.</span>Generate Alpha</h2>
+  <p>Putting more money into your account doesn't make you better at Sharps. Creating value
+  does. That's measured by <strong>Alpha</strong>.</p>
+
+  <p class="refrain">Alpha = Portfolio Value &minus; everything put into your account</p>
+
+  <p>&ldquo;Everything put into your account&rdquo; means every Contribution you have made, plus
+  any balance adjustment your Commissioner has recorded for you. Money you deposit is not
+  performance, so none of it counts as Alpha.</p>
+
+  <p>Your <strong>Portfolio Value</strong> is your Available Funds plus <em>what the House would
+  pay</em> for the teams you hold. That last part matters: once the House stops buying a team
+  (&sect;4 above), it counts nothing toward your Portfolio Value, however highly it is ranked.</p>
+
+  <p>Draft undervalued teams. Find sleepers. Buy before teams rise. Sell before they fall. Make
+  good trades. Win Battles. Position yourself for the CFP. The owner with the highest Alpha at
+  the end of the season is the League Champion.</p>
+
+  <p class="cite">Full detail:
+  <a href="../rules/#s4">Rulebook &sect;4 &mdash; League Structure</a>,
+  <a href="../rules/#s15">&sect;15 &mdash; Definitions</a></p>
+
+  <h2 id="s11"><span class="n">11.</span>Know When You Can Act</h2>
+  <p>There is one piece of timing every owner should understand. <strong>If a team is available,
+  your action happens immediately.</strong> If it isn't, your order is <strong>queued</strong> and
+  settles at the next market opening. That is not a refusal &mdash; you're told which rule is
+  holding the team, and your order stands.</p>
+
+  <p>Three things take a team off the board:</p>
+  <ul>
+    <li><strong>The week's football hasn't been priced yet.</strong> From the moment a team
+    kicks off until the next market opening prices that result, the House will not buy or sell
+    it &mdash; otherwise the House would be trading at a price everyone can already see is
+    wrong. And it isn't only about that team: your rank moves on everyone else's results too,
+    so once the week's last game has kicked off the whole board is off the House's side until
+    the opening. This is the one that comes up most.</li>
+    <li><strong>It's game-locked.</strong> From 30 minutes before kickoff until the game is
+    final.</li>
+    <li><strong>It's carrying a live Battle.</strong> Both teams stay off the board until that
+    Battle settles &mdash; but a Battle is only live once it has bound, 30 minutes before
+    kickoff. A matchup you can see coming holds nothing.</li>
+  </ul>
+
+  <p>Trades follow a shorter rule. A trade isn't priced off the rankings &mdash; the two owners
+  set their own price &mdash; so a stale price can't hurt either of them. A team can be traded
+  whenever it is not game-locked and not carrying a live Battle.</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s6">Rulebook &sect;6 &mdash; The Market</a></p>
+
+  <h2 id="s12"><span class="n">12.</span>One Final Settlement</h2>
+  <p>After the initial buy-in, Sharps doesn't require everyone to send money back and forth every
+  Saturday. Purchases, sales, Battles, and payouts are all tracked in the app throughout the
+  season. After the National Championship, the Prize Pool is fully distributed and the
+  Commissioner settles everyone's final balance.</p>
+
+  <p class="strap">One season. One final settlement.</p>
+
+  <p class="cite">Full detail: <a href="../rules/#s3">Rulebook &sect;3 &mdash; The League Economy</a></p>
+
+  <div class="closer">
+    <h2>That's Sharps.</h2>
+    <p class="strap">Draft teams. Find sleepers. Buy low. Sell high. Make trades. Battle your
+    opponents. Build your portfolio. Own the teams that make a run. Generate Alpha. Win the
+    league.</p>
+
+    <div class="callout">
+      <span class="tag">Read the Rulebook next</span>
+      <p>This guide covers what you need to know to play. For transaction details, unusual
+      situations, Commissioner procedures, and other edge cases, read the
+      <a href="../rules/">Official Sharps Pick 'Em Rulebook</a>.</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

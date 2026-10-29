@@ -1,0 +1,184 @@
+/* <pp-draft-room> — the preseason snake draft board. Nested from .draft-room. */
+.draft-room {
+  display: block;
+
+  /* Main column + chat rail. Overrides the global .grid (2fr 1fr): chat wants a
+     roughly fixed, readable measure and the board takes whatever is left. */
+  & .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    gap: 16px;
+    align-items: start;
+  }
+  & .main { min-width: 0; }
+
+  /* on-the-clock banner */
+  & .clock-panel .body { padding: 14px 18px; }
+  & .on-clock .label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--chalk-dim);
+  }
+  & .on-clock .who-up {
+    font-family: var(--display); font-size: 22px; color: var(--chalk); margin-top: 2px;
+    &.me { color: var(--brass); }
+  }
+
+  /* The snake strip — the draft order's present tense, in the current round's
+     direction. Scrolls sideways rather than wrapping: a second row is the vertical
+     list again in disguise, and that list is what the strip exists to replace. */
+  & .snake {
+    list-style: none; margin: 12px 0 0; padding: 0 0 4px;
+    display: flex; gap: 8px; overflow-x: auto;
+
+    & .chip {
+      flex: 0 0 auto;
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 10px;
+      border: 1px solid var(--stripe);
+      background: var(--field-3);
+
+      & .pos,
+      & .count { font-family: var(--mono); font-size: 12px; color: var(--chalk-dim); }
+      & .funds { font-family: var(--mono); font-size: 12px; color: var(--up); }
+
+      &.done { opacity: 0.5; }
+      &.up {
+        border-color: var(--brass);
+        background: color-mix(in srgb, var(--brass) 16%, transparent);
+
+        & .name { color: var(--brass); font-weight: 700; }
+      }
+      &.full .count { color: var(--red); }
+    }
+  }
+
+  /* "you" badge — shared by the strip and the setup order list */
+  & .you {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    background: var(--brass); color: var(--field); padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* draft order list — setup only, where arranging it is the job */
+  & .order {
+    list-style: none; margin: 0; padding: 0;
+
+    & .slot {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; border-bottom: 1px solid var(--stripe);
+
+      & .pos {
+        font-family: var(--mono); color: var(--chalk-dim); width: 22px; text-align: right;
+      }
+      & .name { flex: 1; }
+      & .count { font-family: var(--mono); color: var(--chalk-dim); }
+      & .funds { font-family: var(--mono); color: var(--up); min-width: 64px; text-align: right; }
+
+      &.full .count { color: var(--red); }
+    }
+  }
+
+  & .reorder { display: inline-flex; gap: 2px; }
+  & .setup-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* §8's dates freeze at the first pick, so the warning sits ABOVE the controls rather
+     than beside them: it has to be read before Start Draft, not noticed after. Full width
+     so the flex row breaks under it. Same treatment as the Desk's .buyin-warn — one
+     vocabulary for "this is allowed, and you should know what it does". */
+  & .calendar-warn {
+    flex-basis: 100%;
+    background: rgba(208, 90, 69, .12);
+    border: 1px solid var(--stripe);
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+
+    & p { margin: 0; }
+    & p + p { margin-top: 6px; }
+  }
+
+  /* available teams */
+  & .pick-actions { padding: 10px 14px; border-bottom: 1px solid var(--stripe); }
+  & .teams {
+    list-style: none; margin: 0; padding: 0; max-height: 60vh; overflow-y: auto;
+
+    & .team {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 14px; border-bottom: 1px solid var(--stripe);
+      /* WRAPS RATHER THAN OVERFLOWS. A row can carry a rank chip, a "Composite #42" note,
+         a team and its conference, the price and the button, which does not fit a phone.
+         Given nowhere to go the button broke its own label across two lines; allowed to
+         wrap, it drops to a second line intact and only when it has to. */
+      flex-wrap: wrap;
+
+      /* flex:1 alone will not shrink below min-content — a flex item's automatic minimum —
+         so a long team name held the row open and pushed the button out. */
+      & .tname { flex: 1; min-width: 0; }
+      & .mv { font-family: var(--mono); color: var(--chalk-dim); min-width: 56px; text-align: right; }
+      /* Last on the line whether or not it wrapped, and never broken mid-label. */
+      & button { margin-left: auto; white-space: nowrap; }
+    }
+  }
+  & .waiting { padding: 16px; }
+
+  /* pick history */
+  & .pick .badge {
+    font-family: var(--mono); font-size: 11px; color: var(--field);
+    background: var(--brass); padding: 1px 6px; border-radius: 3px; margin-right: 8px;
+  }
+  & .pick .amt { float: right; font-family: var(--mono); color: var(--up); }
+
+  /* Draft Chat rail. Sticky so it survives scrolling the team list — the thread
+     scrolls inside its own box instead of growing the page, which is what put it
+     below the fold. The nested <pp-comments> supplies its own header (its
+     <summary>), so drop the leading margin/rule it uses inside a battle or trade. */
+  & .chat-panel {
+    position: sticky; top: 22px;
+    max-height: calc(100vh - 44px);
+    display: flex; flex-direction: column;
+
+    & > .body,
+    & .comments,
+    & .comments details {
+      display: flex; flex-direction: column; min-height: 0; flex: 1;
+    }
+
+    /* THE THREAD CARRIES ITS OWN CEILING, and does not merely inherit one. The flex chain
+       above is still here and still does the work when it can — it is what lets the thread
+       use exactly the height the panel has left — but it runs through a <details>, and a
+       browser is free to wrap that element's non-summary content in an anonymous box. When
+       it does, `.thread` stops being a flex item of anything bounded, `flex: 1` and
+       `min-height: 0` both stop meaning anything, and a long conversation grows straight
+       through the panel's border. Nothing in this app changed the day that started
+       happening.
+       A max-height needs no chain to survive: it is the same answer the market board, the
+       draft board and the Official Record already give, and the value is theirs. */
+    & .thread { overflow-y: auto; min-height: 0; flex: 1; max-height: var(--scroll-max); }
+
+    & .comments {
+      margin-top: 0;
+
+      & details { border-top: 0; padding-top: 0; }
+      & summary { font-size: 13px; letter-spacing: 2.5px; }
+    }
+  }
+
+  /* link-style buttons (reorder arrows) */
+  & .link {
+    background: none; border: none; padding: 0 2px; color: var(--chalk-dim); cursor: pointer;
+    &:hover { color: var(--chalk); }
+    &:disabled { opacity: 0.3; cursor: default; }
+  }
+
+  @media (max-width: 720px) {
+    & .grid { grid-template-columns: 1fr; }
+    /* Chat leads unless the viewer can actually pick — between turns it is what
+       they came for, and stacking it under a 60vh team list is the original bug. */
+    & .grid:not(.acting) .chat-panel { order: -1; }
+    /* The PANEL stops being a sticky rail — there is one column, so it is just a panel in
+       the flow. The THREAD keeps a ceiling of its own: unbounded, a real draft's chat sits
+       on top of the board (see `order: -1` above) and pushes every team below a season of
+       messages. Shorter than the desktop cap because the page has a topbar and a picking
+       banner above it here, and nothing to the side. */
+    & .chat-panel { position: static; max-height: none; }
+    & .chat-panel .thread { max-height: 50vh; }
+  }
+}

@@ -1,0 +1,15 @@
+/* <pp-record> — styles nested from the .record root class. */
+.record {
+  display: block;
+
+  & .amt { float: right; font-family: var(--mono); color: var(--brass); }
+
+  /* A CAPPED BOX RATHER THAN AN ENDLESS ONE, the same answer the market and draft boards
+     give on this page. The record is every team that has ever changed hands — fifty rows
+     before a ball is kicked, several hundred by December — and at full height the panel
+     would bury whatever sits under it.
+
+     Capping the HEIGHT rather than the query is what lets the list stay complete, which is
+     the point: an owner can still read the whole season, they just scroll for it. */
+  & .body { max-height: var(--scroll-max); overflow-y: auto; }
+}

@@ -1,0 +1,85 @@
+/* <pp-owner-card> — one owner's portfolio, read from the standings. Three primary
+   figures, then the supporting set, then the teams. Same visual grammar as
+   <pp-portfolio-summary> on purpose: an owner comparing themselves to a rival should be
+   reading the same shape twice, not learning a second layout. */
+.owner-card {
+  display: block;
+
+  /* The standings link to `#owner`, so this panel is a jump target: leave the page's own
+     padding above it rather than butting its border against the top of the viewport. */
+  scroll-margin-top: 22px;
+
+  & .primary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    align-items: flex-end;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--stripe);
+
+    & .fig { min-width: 0; }
+    & .f-label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--chalk-dim);
+    }
+    & .f-value { font-size: 20px; }
+    & .fig.big .f-value { font-size: clamp(26px, 6vw, 36px); color: var(--brass); line-height: 1.15; }
+  }
+
+  /* Two columns of label/figure on a wide panel, one on a narrow one. */
+  & .supporting {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0 28px;
+    padding: 6px 0 10px;
+
+    & .row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--stripe);
+
+      & .label { font-size: 13px; color: var(--chalk-dim); }
+      & .amount { font-size: 15px; white-space: nowrap; }
+    }
+  }
+
+  & h3 {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--chalk-dim);
+    margin: 16px 0 6px;
+  }
+
+  & table.teams {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+
+    & th, & td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--stripe);
+      text-align: left;
+      white-space: nowrap;
+    }
+    & th {
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--chalk-dim);
+      font-weight: normal;
+    }
+    & th.money, & td.money { text-align: right; }
+    & tbody tr:last-child td { border-bottom: none; }
+  }
+
+  & .up { color: var(--green, #6fcf7f); }
+  & .down { color: var(--red); }
+  & .flat { color: var(--chalk-dim); }
+}

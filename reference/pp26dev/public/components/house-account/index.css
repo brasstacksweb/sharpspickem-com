@@ -1,0 +1,66 @@
+/* <pp-house-account> — styles nested from the component root class, using :root tokens. */
+.house-account {
+  display: block;
+
+  & .balance {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--brass);
+    margin: 0 0 6px;
+  }
+
+  & .breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 14px 0 0;
+
+    & > div {
+      flex: 1;
+      min-width: 150px;
+      background: var(--field-3);
+      border: 1px solid var(--stripe);
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+    & dt {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--chalk-dim);
+    }
+    & dd {
+      margin: 4px 0 0;
+      font-family: var(--mono);
+      font-size: 20px;
+      color: var(--brass);
+    }
+  }
+
+  & .ledger {
+    width: 100%;
+    border-collapse: collapse;
+
+    & th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--chalk-dim);
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--stripe);
+    }
+    & td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--stripe);
+    }
+    & .amount { text-align: right; font-family: var(--mono); white-space: nowrap; }
+    & .amount.pos { color: var(--brass); }
+    & .amount.neg { color: var(--chalk); }
+    & .src { color: var(--chalk-dim); }
+    & .meta { color: var(--chalk-dim); font-family: var(--mono); font-size: 12px; }
+  }
+
+  & [data-refresh] { margin-left: auto; }
+}

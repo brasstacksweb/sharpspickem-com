@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Sharps Pick 'Em">
+  <!-- The app's own palette: deep field green, chalk yard lines, brass. Pixel-sharp
+       corners and a hard shadow, the same retro language the panels use. -->
+  <rect width="512" height="512" fill="#0d2318"/>
+  <!-- yard lines -->
+  <g stroke="#f1ead8" stroke-opacity="0.10" stroke-width="4">
+    <line x1="0" y1="128" x2="512" y2="128"/>
+    <line x1="0" y1="256" x2="512" y2="256"/>
+    <line x1="0" y1="384" x2="512" y2="384"/>
+  </g>
+  <!-- scoreboard panel, hard shadow then face -->
+  <rect x="80" y="96" width="352" height="320" fill="#000" fill-opacity="0.40"/>
+  <rect x="68" y="84" width="352" height="320" fill="#143020" stroke="#2c5138" stroke-width="10"/>
+  <!-- brass base rail, the topbar's signature -->
+  <rect x="68" y="384" width="352" height="20" fill="#d9a53f"/>
+  <text x="244" y="290" font-family="Arial Black, Helvetica, sans-serif" font-size="176"
+        font-weight="900" letter-spacing="-6" text-anchor="middle" fill="#d9a53f">SP</text>
+</svg>
