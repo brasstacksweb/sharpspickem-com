@@ -15,7 +15,9 @@ the_scan_finds_the_files_inside_each_app_test_() ->
     [?_assert(lists:member(File, source_files()))
      || File <- ["apps/sharps_rules/src/sharps_rules.app.src",
                  "apps/sharps_league/src/sharps_league.app.src",
-                 "apps/sharps_web/src/sharps_web.app.src"]].
+                 "apps/sharps_web/src/sharps_web.app.src",
+                 "apps/sharps_rules/src/football_battle_result.erl",
+                 "apps/sharps_rules/test/football_battle_result_tests.erl"]].
 
 source_files() ->
     {ok, ProjectRoot} = file:get_cwd(),
