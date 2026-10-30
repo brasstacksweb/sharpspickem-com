@@ -17,5 +17,9 @@ map, for people and coding agents alike.
 | Path | What it is |
 |---|---|
 | `AGENTS.md` | conventions and plan |
+| `apps/sharps_rules/` | the game rules: pure deciders, one rule per module |
+| `apps/sharps_league/` | league processes, the event log and timers; calls the rules |
+| `apps/sharps_web/` | the web API, live updates and the static front end; calls the league |
+| `test/` | project-wide checks, such as the no-comments rule |
 | `reference/pp26dev/` | selected files from the PHP app, frozen at the commit named in `AGENTS.md`; read-only |
 | `golden/` | recorded PHP behaviour the port must reproduce (not yet recorded) |
