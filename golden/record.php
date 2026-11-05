@@ -81,7 +81,8 @@ function record_battle_settlement(): array
     $cases = [];
     for ($i = 0; $i < 600; $i++) {
         $battle = $random->getInt(0, 19) === 0 ? null : [
-            'stake_cents' => pick($random, [100, 500, 1000, 5000, $random->getInt(1, 20000)]),
+            'stake_cents' => pick($random, [100, 500, 1000, 5000,
+                                            $random->getInt(1, 20000)]),
             'owner_a_id'  => 1,
             'owner_b_id'  => 2,
             'house_pct'   => pick($random, [0.0, 10.0, 12.5,
@@ -92,6 +93,81 @@ function record_battle_settlement(): array
         $cases[] = ['in' => $in, 'out' => decide_battle_settlement(...$in)];
     }
     return $cases;
+}
+
+function record_team_record(): array
+{
+    $cases = [];
+    foreach (seasons() as $season) {
+        $conferenceOf = array_column($season['teams'], 'conference', 'school');
+        $games = every_game($season);
+        foreach (array_keys($conferenceOf) as $team) {
+            $played = array_values(array_filter($games, fn (array $game): bool
+                => $game['home'] === $team || $game['away'] === $team));
+            $completed = array_map('as_completed_game', $played);
+            $cases[] = team_record_case($team, $completed, $conferenceOf);
+            $lastWeek = array_keys(array_column($played, 'week'), $season['last_week']);
+            foreach ($lastWeek as $index) {
+                $completed[$index]['notes'] = "{$conferenceOf[$team]} Championship";
+            }
+            if ($lastWeek !== []) {
+                $cases[] = team_record_case($team, $completed, $conferenceOf);
+            }
+        }
+    }
+    $random = randomizer(13);
+    $conferenceOf = ['Alpha' => 'SEC', 'Beta' => 'SEC', 'Gamma' => 'ACC',
+                     'Delta' => 'FBS Independents', 'Epsilon' => 'FBS Independents'];
+    $everyone = [...array_keys($conferenceOf), 'Zeta FCS'];
+    for ($i = 0; $i < 300; $i++) {
+        $team = pick($random, array_keys($conferenceOf));
+        $games = [];
+        for ($g = $random->getInt(0, 6); $g > 0; $g--) {
+            $opponent = pick($random, array_values(array_diff($everyone, [$team])));
+            $atHome = $random->getInt(0, 1) === 1;
+            [$home, $away] = $atHome ? [$team, $opponent] : [$opponent, $team];
+            $homePoints = $random->getInt(0, 50);
+            $games[] = [
+                'home_team'   => $home,
+                'away_team'   => $away,
+                'home_points' => $homePoints,
+                'away_points' => pick($random, [$homePoints, $random->getInt(0, 50)]),
+                'spread'      => pick($random, [null, $random->getInt(-30, 30) / 2]),
+                'season_type' => pick($random, ['regular', 'regular', 'postseason']),
+                'notes'       => pick($random, ['', '', 'SEC Championship',
+                                                'CHAMPIONSHIP GAME', 'Peach Bowl']),
+            ];
+        }
+        $cases[] = team_record_case($team, $games, $conferenceOf);
+    }
+    return $cases;
+}
+
+function as_completed_game(array $game): array
+{
+    return [
+        'home_team'   => $game['home'],
+        'away_team'   => $game['away'],
+        'home_points' => $game['home_points'],
+        'away_points' => $game['away_points'],
+        'spread'      => $game['spread'],
+        'season_type' => $game['season_type'],
+        'notes'       => $game['notes'] ?? '',
+    ];
+}
+
+function team_record_case(string $team, array $games, array $conferenceOf): array
+{
+    $involved = [$team, ...array_column($games, 'home_team'),
+                 ...array_column($games, 'away_team')];
+    $confOf = [];
+    foreach (array_unique($involved) as $name) {
+        if (isset($conferenceOf[$name])) {
+            $confOf[strtolower($name)] = $conferenceOf[$name];
+        }
+    }
+    $in = ['team' => $team, 'games' => $games, 'confOf' => $confOf];
+    return ['in' => $in, 'out' => decide_team_record(...$in)];
 }
 
 function write_golden(string $decider, array $cases): void
@@ -108,6 +184,7 @@ function write_golden(string $decider, array $cases): void
 $recorders = [
     'decide_battle_result'     => 'record_battle_result',
     'decide_battle_settlement' => 'record_battle_settlement',
+    'decide_team_record'       => 'record_team_record',
 ];
 $wanted = array_slice($argv, 1) ?: array_keys($recorders);
 foreach ($wanted as $decider) {
