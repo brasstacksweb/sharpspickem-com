@@ -410,6 +410,122 @@ function league_date(Random\Randomizer $random): string
     return date('Y-m-d', 1787000000 + $random->getInt(0, 120) * 86400);
 }
 
+const HOUR = 3600;
+const DAY = 86400;
+
+function record_game_state(): array
+{
+    return recorded('game_state', generated(23, 600, fn ($random): array => [
+        'start'     => pick($random, [null, 1760000000]),
+        'completed' => $random->getInt(0, 1) === 1,
+        'now'       => 1760000000 + pick($random, [0, -1, 1, 8 * HOUR, 8 * HOUR - 1,
+                                                   $random->getInt(-DAY, DAY)]),
+    ]));
+}
+
+function record_availability(): array
+{
+    $random = randomizer(24);
+    $cases = [];
+    foreach (seasons() as $season) {
+        $games = every_game($season);
+        $teams = array_column($season['teams'], 'school');
+        $openings = openings($games);
+        $finishes = [];
+        foreach ($games as $index => $game) {
+            $finishes[$index] = $random->getInt(1, 20) === 1
+                ? null : $game['kickoff'] + $random->getInt(3 * HOUR, 4 * HOUR);
+        }
+        $playoff = array_values(array_filter($games, fn (array $game): bool
+            => $game['season_type'] === 'postseason'));
+        for ($moment = 0; $moment < 50; $moment++) {
+            $game = pick($random, $moment < 10 && $playoff !== [] ? $playoff : $games);
+            $now = $game['kickoff'] + pick($random, [
+                -30 * 60 - 1, -30 * 60, -30 * 60 + 1, 0, -1, 2 * HOUR, 4 * HOUR,
+                8 * HOUR - 1, 8 * HOUR, $random->getInt(-3 * DAY, 3 * DAY),
+                pick($random, $openings) - $game['kickoff'],
+            ]);
+            $snapshot = [
+                'teams'     => board($random, $teams, $games, $now),
+                'opened_at' => pick($random, [latest_opening($openings, $now),
+                                              latest_opening($openings, $now), null,
+                                              $game['kickoff']]),
+                'now'       => $now,
+                'lead'      => pick($random, [1800, 1800, 0, 3600]),
+            ];
+            $input = ['games' => array_values(array_filter(array_map(
+                fn (array $game, int $index): ?array
+                    => game_near($game, $finishes[$index], $now, $season['last_week']),
+                $games, array_keys($games))))];
+            if ($random->getInt(1, 4) === 1) {
+                $input['games'][] = ['home' => pick($random, $teams),
+                                     'away' => 'Unscheduled', 'start' => null,
+                                     'completed' => false, 'week' => 1,
+                                     'season_type' => 'regular'];
+            }
+            $in = ['snapshot' => $snapshot, 'input' => $input];
+            $cases[] = ['in' => $in, 'out' => decide_availability(...$in)];
+        }
+    }
+    return $cases;
+}
+
+function openings(array $games): array
+{
+    $lastKickoffOfWeek = [];
+    foreach ($games as $game) {
+        if ($game['season_type'] === 'regular') {
+            $week = $game['week'];
+            $lastKickoffOfWeek[$week] = max($lastKickoffOfWeek[$week] ?? 0,
+                                            $game['kickoff']);
+        }
+    }
+    return array_values(array_map(fn (int $kickoff): int => $kickoff + 36 * HOUR,
+                                  $lastKickoffOfWeek));
+}
+
+function latest_opening(array $openings, int $now): ?int
+{
+    $opened = array_filter($openings, fn (int $opening): bool => $opening <= $now);
+    return $opened === [] ? null : max($opened);
+}
+
+function board(Random\Randomizer $random, array $teams, array $games, int $now): array
+{
+    $playingNow = [];
+    foreach ($games as $game) {
+        if (abs($game['kickoff'] - $now) < 6 * HOUR) {
+            $playingNow[] = $game['home'];
+            $playingNow[] = $game['away'];
+        }
+    }
+    $sampled = array_slice($random->shuffleArray($teams), 0, 20);
+    $board = array_values(array_unique([...array_slice($playingNow, 0, 10),
+                                        ...$sampled]));
+    return array_map(fn (string $team, int $id): array => [
+        'id'              => $id + 1,
+        'name'            => $team,
+        'has_live_battle' => $random->getInt(1, 10) === 1,
+    ], $board, array_keys($board));
+}
+
+function game_near(array $game, ?int $finishesAt, int $now, int $lastWeek): ?array
+{
+    $endOfTheRegularSeason = $game['season_type'] === 'regular'
+        && $game['week'] === $lastWeek && $game['kickoff'] <= $now;
+    if (abs($game['kickoff'] - $now) > 8 * DAY && !$endOfTheRegularSeason) {
+        return null;
+    }
+    return [
+        'home'        => $game['home'],
+        'away'        => $game['away'],
+        'start'       => $game['kickoff'],
+        'completed'   => $finishesAt !== null && $finishesAt <= $now,
+        'week'        => $game['week'],
+        'season_type' => $game['season_type'],
+    ];
+}
+
 function write_golden(string $decider, array $cases): void
 {
     $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
@@ -435,6 +551,8 @@ $recorders = [
     'decide_sale'              => 'record_sale',
     'decide_buyback_forecast'  => 'record_buyback_forecast',
     'decide_calendar_warnings' => 'record_calendar_warnings',
+    'game_state'               => 'record_game_state',
+    'decide_availability'      => 'record_availability',
 ];
 $wanted = array_slice($argv, 1) ?: array_keys($recorders);
 foreach ($wanted as $decider) {
