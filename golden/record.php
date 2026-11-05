@@ -6,6 +6,8 @@ const PP26DEV_COMMIT = 'b13448405413f1f16ae0f88676d47bbb5fc851ff';
 const PP_CFP_FIELD_SIZE = 12;
 const REFERENCE = __DIR__ . '/../reference/pp26dev';
 
+date_default_timezone_set('UTC');
+
 foreach (glob(REFERENCE . '/lib/game/*.php') as $decider) {
     require_once $decider;
 }
@@ -269,6 +271,138 @@ function record_payout_estimates(): array
     return $cases;
 }
 
+function recorded(callable $decider, array $inputs): array
+{
+    return array_map(fn (array $in): array => ['in' => $in, 'out' => $decider(...$in)],
+                     $inputs);
+}
+
+function generated(int $seed, int $count, callable $generate): array
+{
+    $random = randomizer($seed);
+    return array_map(fn (): array => $generate($random), range(1, $count));
+}
+
+function owner_holding(Random\Randomizer $random): array
+{
+    $stake = pick($random, [100, 500, 1000]);
+    $maxTeams = $random->getInt(1, 8);
+    $teamsHeld = $random->getInt(0, $maxTeams);
+    return [
+        'funds'            => pick($random, [0, $random->getInt(0, 40) * 100,
+                                             $random->getInt(0, 10000)]),
+        'stake'            => $stake,
+        'max_teams'        => $maxTeams,
+        'teams_held'       => $teamsHeld,
+        'extra_games'      => pick($random, [0, 0, 1, 2]),
+        'escrow'           => pick($random, [0, $stake,
+                                             $random->getInt(0, $teamsHeld) * $stake,
+                                             $random->getInt(0, 5000)]),
+        'battles_possible' => $random->getInt(0, 4) > 0,
+    ];
+}
+
+function record_reserve_for(): array
+{
+    return recorded('reserve_for', generated(17, 300, fn ($random): array => [
+        'teams'           => $random->getInt(0, 8),
+        'stakeCents'      => pick($random, [0, 100, 500, $random->getInt(1, 5000)]),
+        'extraGames'      => pick($random, [0, 0, 1, 2]),
+        'battlesPossible' => $random->getInt(0, 3) > 0,
+    ]));
+}
+
+function record_reserve_headroom(): array
+{
+    $spending = generated(18, 1500, fn ($random): array => [
+        's' => owner_holding($random) + [
+            'teams_gained' => pick($random, [0, 1, 1, $random->getInt(0, 4)]),
+            'cash_out'     => pick($random, [0, $random->getInt(0, 30) * 100,
+                                             $random->getInt(0, 5000)]),
+        ],
+    ]);
+    return recorded('decide_reserve_headroom', $spending);
+}
+
+function record_margin_call(): array
+{
+    return recorded('decide_margin_call', generated(19, 1000, fn ($random): array => [
+        's' => owner_holding($random),
+    ]));
+}
+
+const BUYBACK_STAGES = ['open', 'top12', 'closed'];
+
+function rank_position(Random\Randomizer $random): ?int
+{
+    return pick($random, [null, $random->getInt(1, 25), 12, 13]);
+}
+
+function record_house_will_buy(): array
+{
+    $inputs = [];
+    foreach (BUYBACK_STAGES as $stage) {
+        foreach ([null, ...range(1, 25)] as $rankPos) {
+            $inputs[] = ['stage' => $stage, 'rankPos' => $rankPos];
+        }
+    }
+    return recorded('house_will_buy', $inputs);
+}
+
+function record_sale(): array
+{
+    return recorded('decide_sale', generated(20, 1500, fn ($random): array => [
+        'team'         => pick($random, [null, seller($random->getInt(0, 9000)),
+                                         seller(0)]),
+        'stage'        => pick($random, BUYBACK_STAGES),
+        'marketValue'  => $random->getInt(1, 60) * 100,
+        'houseBalance' => pick($random, [0, $random->getInt(0, 80) * 100, 1000000]),
+        'rankPos'      => rank_position($random),
+    ]));
+}
+
+function seller(int $basis): array
+{
+    return ['name' => 'Alpha', 'acquired_price_cents' => $basis];
+}
+
+function record_buyback_forecast(): array
+{
+    $utc = new DateTimeZone('UTC');
+    $cases = generated(21, 800, function ($random) use ($utc): array {
+        $now = $random->getInt(1785000000, 1800000000);
+        $expectedOn = date('Y-m-d', $now + $random->getInt(-20, 60) * 86400);
+        return ['stage' => pick($random, BUYBACK_STAGES),
+                'expectedOn' => pick($random, [$expectedOn, $expectedOn, '', null]),
+                'nowTs' => $now, 'tz' => $utc];
+    });
+    return array_map(fn (array $case): array => ['in' => ['tz' => 'UTC'] + $case['in']]
+        + $case, recorded('decide_buyback_forecast', $cases));
+}
+
+function record_calendar_warnings(): array
+{
+    $setups = generated(22, 1000, function ($random): array {
+        $narrows = pick($random, ['', league_date($random)]);
+        $closes = pick($random, ['', league_date($random)]);
+        $today = pick($random, [league_date($random), $narrows ?: $closes, $closes]);
+        return ['s' => [
+            'narrows'        => $narrows,
+            'closes'         => $closes,
+            'today'          => $today ?: league_date($random),
+            'championships'  => pick($random, [null, league_date($random),
+                                               $closes ?: null]),
+            'season_started' => $random->getInt(0, 1) === 1,
+        ]];
+    });
+    return recorded('decide_calendar_warnings', $setups);
+}
+
+function league_date(Random\Randomizer $random): string
+{
+    return date('Y-m-d', 1787000000 + $random->getInt(0, 120) * 86400);
+}
+
 function write_golden(string $decider, array $cases): void
 {
     $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
@@ -287,6 +421,13 @@ $recorders = [
     'decide_playoff_slots'     => 'record_playoff_slots',
     'decide_playoff_share'     => 'record_playoff_share',
     'decide_payout_estimates'  => 'record_payout_estimates',
+    'reserve_for'              => 'record_reserve_for',
+    'decide_reserve_headroom'  => 'record_reserve_headroom',
+    'decide_margin_call'       => 'record_margin_call',
+    'house_will_buy'           => 'record_house_will_buy',
+    'decide_sale'              => 'record_sale',
+    'decide_buyback_forecast'  => 'record_buyback_forecast',
+    'decide_calendar_warnings' => 'record_calendar_warnings',
 ];
 $wanted = array_slice($argv, 1) ?: array_keys($recorders);
 foreach ($wanted as $decider) {
