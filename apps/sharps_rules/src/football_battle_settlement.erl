@@ -48,7 +48,7 @@ decide(#{}, {pay_winner, _OwnerOutsideTheBattle}) ->
 
 pay(Winner, #{stake_units := Stake, house_fee_basis_points := HouseFeeBasisPoints}) ->
     Pot = 2 * Stake,
-    HouseFee = rounded_half_up(Pot * HouseFeeBasisPoints, 10000),
+    HouseFee = units:fraction_of(Pot, HouseFeeBasisPoints, 10000),
     {settle, #{
         winner => Winner,
         stake_units => Stake,
@@ -56,6 +56,3 @@ pay(Winner, #{stake_units := Stake, house_fee_basis_points := HouseFeeBasisPoint
         house_fee_units => HouseFee,
         payout_units => Pot - HouseFee
     }}.
-
-rounded_half_up(Numerator, Denominator) ->
-    (2 * Numerator + Denominator) div (2 * Denominator).
