@@ -15,6 +15,8 @@ final class Trace
     public ?int $leagueId = null;
     public array $events = [];
     public array $seen = [];
+    private array $lastFacts = [];
+    private array $settledOpenings = [];
     private int $ownerMark = 0;
     private int $houseMark = 0;
     private int $pollMark = 0;
@@ -48,7 +50,8 @@ final class Trace
             return;
         }
         $this->events[] = ['event' => $event, 'at' => $at ?? $this->fixtureNow()] + $detail
-            + ['polls' => $this->newPolls(), 'ledger' => $this->newLedgerRows()];
+            + ['polls' => $this->newPolls(), 'ledger' => $this->newLedgerRows()]
+            + $this->changedFacts();
         foreach (NUMBERED as $kind => $table) {
             $ids = db()->prepare("SELECT id FROM {$table} WHERE league_id = ?");
             $ids->execute([$this->leagueId]);
@@ -60,9 +63,50 @@ final class Trace
 
     public function fixtureNow(): int
     {
+        return time() - $this->shift();
+    }
+
+    private function shift(): int
+    {
         $firstKickoff = (int) db()->query(
             'SELECT MIN(UNIX_TIMESTAMP(kickoff_at)) FROM games')->fetchColumn();
-        return time() - ($firstKickoff - $this->firstKickoff);
+        return $firstKickoff - $this->firstKickoff;
+    }
+
+    private function changedFacts(): array
+    {
+        $tz = league_tz($this->leagueId);
+        $shift = $this->shift();
+        $instant = fn (string $wallTime): int
+            => (new DateTimeImmutable($wallTime, $tz))->getTimestamp() - $shift;
+        $openings = db()->prepare("SELECT id, settles_at, poll_cycle_id IS NOT NULL AS priced,
+                                          status
+                                     FROM market_openings WHERE league_id = ?
+                                 ORDER BY settles_at");
+        $openings->execute([$this->leagueId]);
+        $scheduled = [];
+        foreach ($openings->fetchAll() as $opening) {
+            if ($opening['status'] === 'open' || !isset($this->settledOpenings[$opening['id']])) {
+                $scheduled[] = ['at' => $instant($opening['settles_at']),
+                                'priced' => (bool) $opening['priced']];
+            }
+            if ($opening['status'] !== 'open') {
+                $this->settledOpenings[$opening['id']] = true;
+            }
+        }
+        $facts = [
+            'openings'   => $scheduled,
+            'boundaries' => [
+                'narrows_at' => $instant(setting('buyback_narrows_on', '', $this->leagueId)
+                                         . ' 00:00:00'),
+                'closes_at'  => $instant(setting('buyback_closes_on', '', $this->leagueId)
+                                         . ' 00:00:00'),
+            ],
+        ];
+        $changed = array_filter($facts, fn (array $fact, string $name): bool
+            => ($this->lastFacts[$name] ?? null) !== $fact, ARRAY_FILTER_USE_BOTH);
+        $this->lastFacts = $facts;
+        return $changed;
     }
 
     private function newPolls(): array
@@ -271,6 +315,11 @@ try {
             ], $at);
             return $response;
         },
+        'policy' => function (array $view, callable $rng) use ($trace): array {
+            $trace->settle('dashboard', ['owner' => owner_named_by_user(
+                (int) $_SESSION['league_id'], (int) $_SESSION['user_id'])]);
+            return sim_policy_random($view, $rng);
+        },
         'check' => function (int $week, int $leagueId) use ($trace): void {
             $trace->settle('week_end', ['week' => $week] + week_end($leagueId));
             $bad = check_ledger_invariants($leagueId);
@@ -292,8 +341,7 @@ try {
 
 $file = __DIR__ . "/{$year}-seed-{$seed}" . ($weeks === 0 ? '-draft' : '') . '.json';
 $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR;
-$events = array_filter($trace->events, fn (array $event): bool
-    => $event['event'] !== 'clock' || $event['ledger'] !== [] || $event['polls'] !== []);
+$events = $trace->events;
 $commit = trim((string) shell_exec('git -C ' . escapeshellarg($pp26dev)
                                    . ' rev-parse HEAD'));
 file_put_contents($file, json_encode(['pp26dev' => $commit, 'year' => $year,

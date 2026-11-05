@@ -146,13 +146,17 @@ golden test, never patched into the recording.
 
 `golden/season/` holds whole leagues: the PHP's own simulator (`setup/simulator.php`)
 playing seeded owners through its real handlers, recorded by `golden/season/record.php`
-as one step per line. A step is the setup, an owner's action with the PHP's answer, or
-the clock catching up, and each carries the polls that landed and the ledger rows it
-wrote. The PHP's database ids are recorded as names (owners, teams) or as their order of
-creation within the league (Battles, trades, transactions, orders, ledger entries), and
-times are the fixture's own, not the replay's shifted clock. The last line is the
-league's end state. `league_replay_tests` replays every trace through a league process
-and fails on any step whose answer or ledger rows differ, and on the end state.
+as one step per line. A step is the setup, an owner's dashboard loading (which is when
+the PHP catches a league up), an owner's action with the PHP's answer, or the end of a
+week. Each carries the polls that landed and the ledger rows it wrote, and, when they
+change, the facts the replay harness controls rather than the app: the market openings
+scheduled and §8's two boundaries, as instants. The PHP's database ids are recorded as
+names (owners, teams) or as their order of creation within the league (Battles, trades,
+transactions, orders, ledger entries), and times are the fixture's own, not the
+replay's shifted clock. Each week ends with a snapshot of funds, rosters and the House,
+and the last line is the league's end state. `league_replay_tests` replays every trace
+through a league process, catching up exactly where the PHP did, and fails on the first
+step whose answer, ledger rows or snapshot differ.
 
 Recording needs the pp26dev repository at the commit above (`PP26DEV`, default
 `~/Projects/plassman-pickem`) and a MariaDB database holding its schema:
