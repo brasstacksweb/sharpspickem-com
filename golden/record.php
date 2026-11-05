@@ -183,7 +183,8 @@ function record_playoff_slots(): array
         $bracket = bracket_of($season);
         for ($played = 0; $played <= count($bracket); $played++) {
             $games = [...array_slice($bracket, 0, $played),
-                      ...array_map('not_yet_played', array_slice($bracket, $played))];
+                      ...array_map('in_progress', array_slice($bracket, $played, 1)),
+                      ...array_map('not_yet_played', array_slice($bracket, $played + 1))];
             $cases[] = playoff_slots_case($games);
             $cases[] = playoff_slots_case(with_bowls_and_shuffled($random, $games));
         }
@@ -203,6 +204,11 @@ function bracket_of(array $season): array
     ], $season['playoff']);
 }
 
+function in_progress(array $game): array
+{
+    return ['completed' => false] + $game;
+}
+
 function not_yet_played(array $game): array
 {
     return ['completed' => false, 'home_points' => null, 'away_points' => null] + $game;
@@ -212,7 +218,8 @@ function with_bowls_and_shuffled(Random\Randomizer $random, array $games): array
 {
     $bowls = [['Peach Bowl', true], ['Gator Bowl', true],
               ['College Football Playoff Bye Week Special', true],
-              ['Rose Bowl Game', false], ['', true]];
+              ['Rose Bowl Game', false], ['', true], ['National Bowl Showcase', true],
+              ['First Round of the Bowl Season Quarterfinal Classic', true]];
     foreach ($bowls as [$notes, $completed]) {
         $games[] = ['home' => 'Bowl Home', 'away' => 'Bowl Away', 'home_points' => 21,
                     'away_points' => 14, 'completed' => $completed, 'notes' => $notes];
