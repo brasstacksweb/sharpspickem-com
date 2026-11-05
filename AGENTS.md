@@ -24,7 +24,7 @@ until the go/no-go below says so.
 | What does a league hold? | `reference/pp26dev/setup/schema.sql` — the data model, as a list of what is recorded, not a design to copy |
 | What seasons can we replay? | `reference/pp26dev/setup/fixtures/` — 2022 to 2025 from CFBD, kickoffs and lines included |
 | Which features exist? | `reference/pp26dev/docs/OVERVIEW.md` — the pages, actions and game loops to cover |
-| What must the Erlang reproduce exactly? | `golden/`, once recorded — see *The oracle* |
+| What must the Erlang reproduce exactly? | `golden/` — see *The oracle* |
 | What is decided but not built? | `reference/pp26dev/docs/AUCTION-DRAFT.md` — build it here, not in the PHP |
 
 ### `reference/` is frozen
@@ -132,11 +132,17 @@ messages.
 
 ## The oracle
 
-`golden/` will hold recorded `{decider, inputs, expected output}` cases, captured from the
-PHP replaying the cached 2022–2025 seasons (`reference/pp26dev/setup/fixtures/`). Each
-file records the pp26dev commit it came from. Recording needs the PHP and MySQL running,
-so it is done on the PHP box and the JSON copied here. The Erlang must reproduce every case
-exactly; a disagreement is a bug in one or the other, and the rulebook decides which.
+`golden/` holds recorded `{in, out}` cases, one file per PHP decider, each naming the
+pp26dev commit it came from. `golden/record.php` runs the deciders in `reference/` on
+every game of the cached 2022–2025 seasons (`reference/pp26dev/setup/fixtures/`) and on
+seeded generated snapshots. The deciders are pure, so recording needs PHP 8.2 or later
+and nothing else; re-record with `php golden/record.php` after re-snapshotting.
+
+Each decider has a `*_golden_tests.erl` that turns a case's PHP input into the port's
+input and its PHP output into the port's result, and fails on any case where the two
+differ. The Erlang must reproduce every case exactly; a disagreement is a bug in one or
+the other, and the rulebook decides which. A deliberate difference is translated in the
+golden test, never patched into the recording.
 
 ## Testing
 
