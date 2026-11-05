@@ -597,6 +597,59 @@ function record_trade_settlement(): array
     return recorded('decide_trade_settlement', $trades);
 }
 
+function record_blind_auction(): array
+{
+    $auctions = generated(27, 1200, function ($random): array {
+        $stake = pick($random, [100, 500]);
+        $maxTeams = $random->getInt(1, 4);
+        $ownerIds = range(1, $random->getInt(1, 4));
+        $owners = [];
+        $drops = [];
+        foreach ($ownerIds as $ownerId) {
+            $owners[$ownerId] = [
+                'funds'       => pick($random, [0, $random->getInt(0, 40) * 100,
+                                                $random->getInt(0, 6000), 100000]),
+                'teams'       => $random->getInt(max(0, $maxTeams - 2), $maxTeams),
+                'extra_games' => pick($random, [0, 0, 1]),
+                'escrow'      => pick($random, [0, 0, $stake]),
+            ];
+            $dropCount = pick($random, [0, 0, 1, 2]);
+            $drops[$ownerId] = array_map(fn (int $n): array => [
+                'drop_id' => 100 * $ownerId + $n,
+                'team_id' => 1000 + 10 * $ownerId + $n,
+            ], $dropCount === 0 ? [] : range(1, $dropCount));
+        }
+        $bidIds = $random->shuffleArray(range(1, 40));
+        $priorities = [];
+        $teams = [];
+        foreach (range(1, $random->getInt(1, 6)) as $teamId) {
+            $bids = [];
+            foreach ($random->shuffleArray($ownerIds) as $ownerId) {
+                if ($random->getInt(0, 2) === 0) {
+                    continue;
+                }
+                $priorities[$ownerId] = ($priorities[$ownerId] ?? 0) + 1;
+                $bids[] = [
+                    'bid_id'   => array_pop($bidIds),
+                    'owner_id' => $ownerId,
+                    'amount'   => pick($random, [1000, $random->getInt(1, 30) * 100]),
+                    'priority' => pick($random, [$priorities[$ownerId],
+                                                 $random->getInt(1, 3)]),
+                ];
+            }
+            usort($bids, fn (array $bid, array $other): int
+                => $other['amount'] <=> $bid['amount']);
+            $teams[] = ['team_id' => $teamId, 'team_name' => "Team {$teamId}",
+                        'is_house' => $random->getInt(1, 10) > 1,
+                        'extra_games' => pick($random, [0, 0, 0, 1]), 'bids' => $bids];
+        }
+        return ['teams' => $teams, 'owners' => $owners, 'maxTeams' => $maxTeams,
+                'drops' => $drops, 'stake' => $stake,
+                'battlesPossible' => $random->getInt(0, 4) > 0];
+    });
+    return recorded('resolve_bids', $auctions);
+}
+
 function write_golden(string $decider, array $cases): void
 {
     $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
@@ -626,6 +679,7 @@ $recorders = [
     'decide_availability'      => 'record_availability',
     'trade_allocation'         => 'record_trade_allocation',
     'decide_trade_settlement'  => 'record_trade_settlement',
+    'resolve_bids'             => 'record_blind_auction',
 ];
 $wanted = array_slice($argv, 1) ?: array_keys($recorders);
 foreach ($wanted as $decider) {
