@@ -13,7 +13,8 @@
 
 -type final_score() :: #{
     home_points := non_neg_integer(),
-    away_points := non_neg_integer()
+    away_points := non_neg_integer(),
+    atom() => term()
 }.
 
 -type side() :: home | away.

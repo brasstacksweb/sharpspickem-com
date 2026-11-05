@@ -73,7 +73,9 @@ messages.
 - **Three apps, called in one direction.** `sharps_web` calls `sharps_league`, which calls
   `sharps_rules`, which calls only pure stdlib. Each `.app.src` lists the apps it may
   call; `test/layering_tests.erl` fails the build on any other call, and on a rule that
-  reads the clock, sends, spawns or touches a file.
+  reads the clock, sends, spawns or touches a file. A rule never calls a fun held in a
+  variable (`Key(Item)`): xref cannot see what it does, so the test cannot vouch for it.
+  Pass named functions to `lists:sort/2` and the like instead.
 - **One process per league.** It serialises everything that league does, which is what
   replaces the PHP's row locks and lock ordering. Timers in the process replace cron and
   the PHP's catch-up-on-page-load.
