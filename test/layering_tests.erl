@@ -14,7 +14,12 @@ each_app_calls_only_itself_and_the_apps_it_declares_test_() ->
 
 the_rules_call_nothing_with_side_effects_test() ->
     ?assertEqual([], [Call || {_Caller, Callee} = Call <- external_calls(sharps_rules),
-                              not is_pure(Callee)]).
+                              not is_another_rule(Callee), not is_pure(Callee)]).
+
+a_rule_may_call_another_rule_test_() ->
+    [{"a rule is pure because this file checks it",
+      ?_assert(is_another_rule({football_battle_result, decide, 2}))},
+     {"the league is not a rule", ?_assertNot(is_another_rule({league_server, call, 2}))}].
 
 the_purity_check_rejects_the_clock_and_messages_test_() ->
     [{"reading the clock", ?_assertNot(is_pure({erlang, system_time, 1}))},
@@ -70,6 +75,9 @@ app_installed_at(AppDirectory) ->
 app_named_by_directory(Directory) ->
     [Name | _Version] = string:split(Directory, "-"),
     list_to_atom(Name).
+
+is_another_rule({Module, _Function, _Arity}) ->
+    owning_app(Module) =:= sharps_rules.
 
 is_pure({erlang, Function, Arity}) ->
     is_pure_erlang_function(Function, Arity)
