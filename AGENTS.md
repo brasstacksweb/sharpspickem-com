@@ -70,6 +70,10 @@ messages.
 - **Pure deciders, then effects.** Each rule is a pure function from a snapshot and an
   input to effects or a refusal — no process, no I/O, no clock read. The league process
   gathers the snapshot, calls the decider and applies the effects.
+- **Three apps, called in one direction.** `sharps_web` calls `sharps_league`, which calls
+  `sharps_rules`, which calls only pure stdlib. Each `.app.src` lists the apps it may
+  call; `test/layering_tests.erl` fails the build on any other call, and on a rule that
+  reads the clock, sends, spawns or touches a file.
 - **One process per league.** It serialises everything that league does, which is what
   replaces the PHP's row locks and lock ordering. Timers in the process replace cron and
   the PHP's catch-up-on-page-load.

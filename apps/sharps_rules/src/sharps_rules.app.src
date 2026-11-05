@@ -1,0 +1,7 @@
+{application, sharps_rules, [
+    {description, "Sharps Pick 'Em game rules: pure deciders"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {applications, [kernel, stdlib]},
+    {env, []}
+]}.

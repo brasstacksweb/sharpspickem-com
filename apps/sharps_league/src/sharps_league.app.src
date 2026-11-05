@@ -1,0 +1,7 @@
+{application, sharps_league, [
+    {description, "Sharps Pick 'Em league processes, event log and timers"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {applications, [kernel, stdlib, sharps_rules]},
+    {env, []}
+]}.
