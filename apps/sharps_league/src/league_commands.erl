@@ -10,6 +10,14 @@
 
 -type command() ::
     {confirm_contribution, owner(), pos_integer()}
+  | {order, {bid, pos_integer()} | add | drop | conditional_drop | sale, binary()}
+  | {cancel_order, pos_integer()}
+  | {reorder_bid, pos_integer(), up | down}
+  | {propose_trade, map()}
+  | {confirm_trade, pos_integer()}
+  | {cancel_trade, pos_integer()}
+  | {raise_stake, pos_integer(), pos_integer()}
+  | {answer_raise, pos_integer(), accept | decline}
   | create_draft
   | {set_draft_order, [owner()]}
   | start_draft
@@ -29,6 +37,22 @@ decide(#{actor := Owner, command := Command} = Request,
 as_events({refused, _Why} = Refused) -> Refused;
 as_events(Events) when is_list(Events) -> {ok, Events}.
 
+command({order, Kind, Team}, #{owner := Owner}, #{at := Now}, State) ->
+    league_market:order(Owner, Kind, Team, #{now => Now, state => State});
+command({cancel_order, Number}, #{owner := Owner}, _Request, State) ->
+    league_market:cancel(Owner, Number, State);
+command({reorder_bid, Number, Direction}, #{owner := Owner}, _Request, State) ->
+    league_market:reorder(Owner, Number, Direction, State);
+command({propose_trade, Proposal}, #{owner := Owner}, #{at := Now}, State) ->
+    league_trades:propose(Owner, Proposal, #{now => Now, state => State});
+command({confirm_trade, Number}, #{owner := Owner}, #{at := Now}, State) ->
+    league_trades:confirm(Owner, Number, #{now => Now, state => State});
+command({cancel_trade, Number}, #{owner := Owner}, _Request, State) ->
+    league_trades:cancel(Owner, Number, State);
+command({raise_stake, Number, Stake}, #{owner := Owner}, #{at := Now}, State) ->
+    league_battles:raise(Owner, Number, Stake, #{now => Now, state => State});
+command({answer_raise, Number, Answer}, #{owner := Owner}, #{at := Now}, State) ->
+    league_battles:answer(Owner, Number, Answer, #{now => Now, state => State});
 command({confirm_contribution, _Owner, _Units}, #{commissioner := false}, _Request,
         _State) ->
     {refused, not_the_commissioner};

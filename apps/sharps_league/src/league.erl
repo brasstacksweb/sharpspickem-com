@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--export([open/2, act/2, observe/2, state/1, close/1]).
+-export([open/2, act/2, observe/2, catch_up/2, state/1, close/1]).
 
 -export([init/1, handle_call/3, handle_cast/2]).
 
@@ -10,6 +10,7 @@
 
 -type call() :: {act, league_commands:request()}
               | {observe, league_state:event()}
+              | {catch_up, {utc, integer()}}
               | state.
 
 -spec open(file:filename(), league_state:event()) -> {ok, pid()}.
@@ -24,6 +25,10 @@ act(League, Request) ->
 -spec observe(pid(), league_state:event()) -> ok.
 observe(League, Fact) ->
     gen_server:call(League, {observe, Fact}).
+
+-spec catch_up(pid(), {utc, integer()}) -> ok.
+catch_up(League, Now) ->
+    gen_server:call(League, {catch_up, Now}).
 
 -spec state(pid()) -> league_state:state().
 state(League) ->
@@ -50,6 +55,8 @@ handle_call({act, Request}, _From, #{state := State} = League) ->
         {ok, Events} -> {reply, ok, record(Events, League)};
         Refused -> {reply, Refused, League}
     end;
+handle_call({catch_up, Now}, _From, #{state := State} = League) ->
+    {reply, ok, record(league_catch_up:catch_up(Now, State), League)};
 handle_call({observe, Fact}, _From, League) ->
     {reply, ok, record([Fact], League)};
 handle_call(state, _From, #{state := State} = League) ->

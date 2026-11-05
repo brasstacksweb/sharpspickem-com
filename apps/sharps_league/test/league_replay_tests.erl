@@ -2,11 +2,11 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--define(DRAFT_NIGHT, [<<"create_draft">>, <<"set_draft_order">>, <<"start_draft">>,
-                      <<"draft_select">>, <<"draft_pass">>, <<"undo_pick">>]).
+-define(REPLAY_GAME_SECONDS, 12600).
 
-draft_night_writes_the_ledgers_the_php_wrote_test_() ->
-    [{Trace, ?_assertEqual([], disagreements(Trace))} || Trace <- traces()].
+every_league_writes_the_ledgers_the_php_wrote_test_() ->
+    [{Trace, {timeout, 120, ?_assertEqual([], disagreements(Trace))}}
+     || Trace <- traces()].
 
 traces() ->
     lists:sort([filename:basename(Trace, ".json")
@@ -15,86 +15,156 @@ traces() ->
 disagreements(Trace) ->
     {Header, Steps} = trace(Trace),
     Fixture = fixture(maps:get(<<"year">>, Header)),
-    Directory = scratch_directory(Trace),
     [#{<<"event">> := <<"league">>} = Setup | Played] = Steps,
-    {ok, League} = league:open(Directory, opening(Setup, Fixture)),
+    {ok, League} = league:open(scratch_directory(Trace), opening(Setup, Fixture)),
     ok = league:observe(League, {schedule_synced, schedule(Fixture)}),
-    {DraftNight, Rest} = lists:splitwith(fun on_draft_night/1, Played),
     try
-        lists:append([step(League, Step, Fixture) || Step <- DraftNight])
-            ++ the_end(League, Rest)
+        replay(League, Played, Fixture)
     after
         league:close(League)
     end.
 
-on_draft_night(#{<<"event">> := <<"setup">>}) -> true;
-on_draft_night(#{<<"action">> := Action}) -> lists:member(Action, ?DRAFT_NIGHT);
-on_draft_night(#{}) -> false.
+replay(_League, [], _Fixture) ->
+    [];
+replay(League, [Step | Later], Fixture) ->
+    ok = observe_facts(League, Step, Fixture),
+    case step(League, Step) of
+        [] -> replay(League, Later, Fixture);
+        Disagreement -> Disagreement
+    end.
 
-the_end(League, [#{<<"event">> := <<"end">>} = End]) ->
-    Php = end_state(End),
-    case port_end_state(league:state(League)) of
-        Php -> [];
-        Port -> [#{step => the_end, php => Php, port => Port}]
-    end;
-the_end(_League, _SeasonStillToReplay) ->
-    [].
+observe_facts(League, Step, Fixture) ->
+    Polls = [poll(Poll, Fixture) || Poll <- maps:get(<<"polls">>, Step, [])],
+    Openings = [{openings_scheduled, [opening(Opening) || Opening <- List]}
+                || #{<<"openings">> := List} <- [Step]],
+    Boundaries = [{buyback_boundaries, #{narrows_at => {utc, Narrows},
+                                         closes_at => {utc, Closes}}}
+                  || #{<<"boundaries">> := #{<<"narrows_at">> := Narrows,
+                                              <<"closes_at">> := Closes}} <- [Step]],
+    lists:foreach(fun(Fact) -> ok = league:observe(League, Fact) end,
+                  Polls ++ Openings ++ Boundaries).
 
-end_state(#{<<"funds">> := Funds, <<"teams">> := Teams, <<"house">> := House,
-            <<"draft">> := Draft}) ->
-    #{funds => Funds, house => House, draft => binary_to_atom(Draft),
-      teams => lists:sort([{Team, Owner, Basis}
-                           || #{<<"team">> := Team, <<"owner">> := Owner,
-                                <<"basis">> := Basis} <- Teams])}.
+opening(#{<<"at">> := At, <<"priced">> := Priced}) ->
+    #{at => {utc, At}, priced => Priced}.
 
-port_end_state(#{owners := Owners, teams := Teams, draft := #{stage := Stage}} = State) ->
-    #{funds => #{Owner => Funds || Owner := #{funds_units := Funds} <- Owners},
-      house => league_state:house_balance(State),
-      draft => draft_status(Stage),
-      teams => lists:sort([{Team, Owner, Basis}
-                           || Team := #{owner := Owner, basis_units := Basis} <- Teams])}.
-
-draft_status(setup) -> setup;
-draft_status({picking, _Slot}) -> active;
-draft_status(complete) -> complete.
-
-step(League, #{<<"event">> := <<"setup">>, <<"polls">> := Polls} = Step, Fixture) ->
-    [ok = league:observe(League, poll(Poll, Fixture)) || Poll <- Polls],
+step(League, #{<<"event">> := <<"setup">>} = Step) ->
     Before = ledgers(League),
     Funded = [league:act(League, #{at => at(Step), actor => commissioner(League),
                                    command => {confirm_contribution, Owner, Units}})
               || #{<<"owner">> := Owner, <<"amount">> := Units} <- ledger(Step)],
     compare(Step, lists:usort(Funded) =:= [ok], new_rows(Before, ledgers(League)));
-step(League, #{<<"event">> := <<"action">>, <<"status">> := Status} = Step, _Fixture) ->
+step(_League, #{<<"event">> := <<"clock">>} = Step) ->
+    compare(Step, true, {[], []});
+step(League, #{<<"event">> := <<"dashboard">>} = Step) ->
+    caught_up(League, Step);
+step(League, #{<<"event">> := <<"action">>, <<"status">> := Status} = Step) ->
     Before = ledgers(League),
     Answer = league:act(League, #{at => at(Step), actor => maps:get(<<"owner">>, Step),
                                   command => command(Step)}),
     compare(Step#{<<"answer">> => Answer}, (Answer =:= ok) =:= (Status < 400),
-            new_rows(Before, ledgers(League))).
+            new_rows(Before, ledgers(League)));
+step(League, #{<<"event">> := <<"week_end">>} = Step) ->
+    caught_up(League, Step)
+        ++ same_state(snapshot(Step), port_snapshot(league:state(League)), Step);
+step(League, #{<<"event">> := <<"end">>} = Step) ->
+    State = league:state(League),
+    same_state((snapshot(Step))#{draft => binary_to_atom(maps:get(<<"draft">>, Step))},
+               (port_snapshot(State))#{draft => draft_status(State)}, Step).
+
+caught_up(League, Step) ->
+    Before = ledgers(League),
+    ok = league:catch_up(League, at(Step)),
+    compare(Step, true, new_rows(Before, ledgers(League))).
 
 compare(#{<<"ledger">> := Recorded} = Step, SameAnswer, {OwnerRows, HouseRows}) ->
     Expected = {[row(Row) || #{<<"book">> := <<"owner">>} = Row <- Recorded],
                 [row(Row) || #{<<"book">> := <<"house">>} = Row <- Recorded]},
     case SameAnswer andalso Expected =:= {OwnerRows, HouseRows} of
         true -> [];
-        false -> [#{step => maps:without([<<"ledger">>, <<"polls">>], Step),
-                    php => Expected, port => {OwnerRows, HouseRows}}]
+        false -> [#{step => without_facts(Step), php => Expected,
+                    port => {OwnerRows, HouseRows}}]
     end.
 
-command(#{<<"action">> := <<"create_draft">>}) ->
-    create_draft;
-command(#{<<"action">> := <<"set_draft_order">>, <<"in">> := In}) ->
-    {set_draft_order, maps:get(<<"owner_ids">>, In)};
-command(#{<<"action">> := <<"start_draft">>}) ->
-    start_draft;
-command(#{<<"action">> := <<"draft_select">>, <<"in">> := #{<<"team_id">> := null}}) ->
-    {draft_select, <<>>};
-command(#{<<"action">> := <<"draft_select">>, <<"in">> := #{<<"team_id">> := Team}}) ->
-    {draft_select, Team};
-command(#{<<"action">> := <<"draft_pass">>}) ->
-    draft_pass;
-command(#{<<"action">> := <<"undo_pick">>}) ->
-    undo_pick.
+same_state(Php, Php, _Step) -> [];
+same_state(Php, Port, Step) -> [#{step => without_facts(Step), php => Php, port => Port}].
+
+without_facts(Step) ->
+    maps:without([<<"ledger">>, <<"polls">>, <<"openings">>, <<"boundaries">>,
+                  <<"teams">>, <<"funds">>], Step).
+
+snapshot(#{<<"funds">> := Funds, <<"teams">> := Teams, <<"house">> := House}) ->
+    #{funds => Funds, house => House,
+      teams => lists:sort([{Team, Owner, Basis}
+                           || #{<<"team">> := Team, <<"owner">> := Owner,
+                                <<"basis">> := Basis} <- Teams])}.
+
+port_snapshot(#{owners := Owners, teams := Teams} = State) ->
+    #{funds => #{Owner => Funds || Owner := #{funds_units := Funds} <- Owners},
+      house => league_state:house_balance(State),
+      teams => lists:sort([{Team, Owner, Basis}
+                           || Team := #{owner := Owner, basis_units := Basis} <- Teams])}.
+
+draft_status(#{draft := #{stage := setup}}) -> setup;
+draft_status(#{draft := #{stage := {picking, _Slot}}}) -> active;
+draft_status(#{draft := #{stage := complete}}) -> complete.
+
+command(#{<<"action">> := Action} = Step) ->
+    command(Action, maps:get(<<"in">>, Step, #{})).
+
+command(<<"create_draft">>, _In) -> create_draft;
+command(<<"set_draft_order">>, In) -> {set_draft_order, maps:get(<<"owner_ids">>, In)};
+command(<<"start_draft">>, _In) -> start_draft;
+command(<<"draft_select">>, In) -> {draft_select, team(In)};
+command(<<"draft_pass">>, _In) -> draft_pass;
+command(<<"undo_pick">>, _In) -> undo_pick;
+command(<<"submit_bid">>, In) ->
+    {order, {bid, units(maps:get(<<"amount">>, In))}, team(In)};
+command(<<"add_free_team">>, In) -> {order, add, team(In)};
+command(<<"drop_team">>, In) -> {order, drop, team(In)};
+command(<<"submit_drop_order">>, In) -> {order, conditional_drop, team(In)};
+command(<<"sale_to_house">>, In) -> {order, sale, team(In)};
+command(<<"cancel_order">>, In) -> {cancel_order, number(In, <<"order_id">>)};
+command(<<"reorder_bid">>, In) ->
+    Direction = binary_to_atom(maps:get(<<"direction">>, In)),
+    {reorder_bid, number(In, <<"order_id">>), Direction};
+command(<<"propose_trade">>, In) ->
+    {propose_trade, #{to => maps:get(<<"to_owner_id">>, In),
+                      sending => team_or_none(maps:get(<<"team_out_id">>, In)),
+                      receiving => team_or_none(maps:get(<<"team_in_id">>, In)),
+                      cash_units => units(maps:get(<<"cash">>, In)),
+                      paid_by => paid_by(maps:get(<<"cash_direction">>, In))}};
+command(<<"confirm_trade">>, In) -> {confirm_trade, number(In, <<"tx_id">>)};
+command(<<"cancel_trade">>, In) -> {cancel_trade, number(In, <<"tx_id">>)};
+command(<<"raise_battle_stake">>, In) ->
+    {raise_stake, number(In, <<"battle_id">>), units(maps:get(<<"stake">>, In))};
+command(<<"respond_battle_stake">>, In) ->
+    {answer_raise, number(In, <<"battle_id">>), accepted(maps:get(<<"accept">>, In))}.
+
+team(#{<<"team_id">> := null}) -> <<>>;
+team(#{<<"team_id">> := Team}) -> Team.
+
+team_or_none(null) -> no_team;
+team_or_none(Team) -> Team.
+
+number(In, Key) ->
+    case maps:get(Key, In) of
+        Number when is_integer(Number) -> Number;
+        _NoSuchRecord -> 0
+    end.
+
+paid_by(<<"i_pay">>) -> me;
+paid_by(_TheyPay) -> them.
+
+accepted(true) -> accept;
+accepted(false) -> decline.
+
+units(Dollars) ->
+    [Whole | Cents] = binary:split(Dollars, <<".">>),
+    binary_to_integer(Whole) * 100 + cents(Cents).
+
+cents([]) -> 0;
+cents([<<Tens>>]) -> (Tens - $0) * 10;
+cents([<<Tens, Ones>>]) -> (Tens - $0) * 10 + (Ones - $0).
 
 ledgers(League) ->
     State = league:state(League),
@@ -129,8 +199,10 @@ opening(#{<<"settings">> := Settings, <<"owners">> := Owners}, #{<<"teams">> := 
                       teams => [School || #{<<"school">> := School} <- Teams]}}.
 
 settings(#{<<"max_teams">> := MaxTeams, <<"battle_stake_cents">> := Stake,
+           <<"battle_house_pct">> := HousePercent,
            <<"buyback_narrows_on">> := NarrowsOn, <<"buyback_closes_on">> := ClosesOn}) ->
     #{max_teams => binary_to_integer(MaxTeams), stake_units => binary_to_integer(Stake),
+      house_fee_basis_points => units(HousePercent),
       buyback_narrows_on => league_date(NarrowsOn),
       buyback_closes_on => league_date(ClosesOn)}.
 
@@ -138,11 +210,21 @@ league_date(<<Year:4/binary, "-", Month:2/binary, "-", Day:2/binary>>) ->
     {league_local, {binary_to_integer(Year), binary_to_integer(Month),
                     binary_to_integer(Day)}}.
 
-schedule(#{<<"games">> := Weeks}) ->
-    [#{week => binary_to_integer(Week), home_team => Home, away_team => Away,
-       kickoff => {utc, Kickoff}}
-     || Week := Games <- Weeks,
-        #{<<"home">> := Home, <<"away">> := Away, <<"kickoff">> := Kickoff} <- Games].
+schedule(#{<<"games">> := Weeks} = Fixture) ->
+    [game(binary_to_integer(Week), regular, Game)
+     || Week := Games <- Weeks, Game <- Games]
+        ++ [game(1, postseason, Game) || Game <- maps:get(<<"playoff">>, Fixture, [])].
+
+game(Week, SeasonType, #{<<"home">> := Home, <<"away">> := Away, <<"kickoff">> := Kickoff,
+                         <<"home_points">> := HomePoints,
+                         <<"away_points">> := AwayPoints} = Game) ->
+    #{week => Week, season_type => SeasonType, home_team => Home, away_team => Away,
+      kickoff => {utc, Kickoff}, line => line(maps:get(<<"spread">>, Game, null)),
+      final_at => {utc, Kickoff + ?REPLAY_GAME_SECONDS},
+      home_points => HomePoints, away_points => AwayPoints}.
+
+line(null) -> no_line_quoted;
+line(Spread) -> {home_spread_tenths, round(Spread * 10)}.
 
 poll(#{<<"week">> := Week, <<"poll">> := Poll}, Fixture) ->
     Ranked = maps:get(integer_to_binary(Week), maps:get(rankings_key(Poll), Fixture)),
