@@ -650,6 +650,72 @@ function record_blind_auction(): array
     return recorded('resolve_bids', $auctions);
 }
 
+function record_market_order(): array
+{
+    $phases = [...array_fill(0, 18, 'regular'), 'draft', 'setup'];
+    $orders = generated(28, 4000, function ($random) use ($phases): array {
+        $kind = pick($random, ['bid', 'bid', 'add', 'drop', 'sale']);
+        $rankPos = rank_position($random);
+        $stake = pick($random, [100, 500]);
+        $maxTeams = $random->getInt(1, 5);
+        $holding = owner_holding($random);
+        $locked = $random->getInt(1, 4) === 1;
+        $team = ['id' => 10, 'name' => 'Team 10',
+                 'owner_id' => pick($random, [null, null, 1, 2])];
+        $dropTeam = $random->getInt(1, 3) > 1 ? null : [
+            'id' => pick($random, [20, 20, 20, 10]), 'name' => 'Team 20',
+            'owner_id' => pick($random, [1, 1, 1, 2]),
+        ];
+        $snapshot = [
+            'season_over'        => $random->getInt(1, 30) === 1,
+            'phase'              => pick($random, $phases),
+            'team'               => $team,
+            'owner_id'           => 1,
+            'has_order_for_team' => $random->getInt(1, 15) === 1,
+            'in_pending_trade'   => $random->getInt(1, 15) === 1,
+            'locked'             => $locked,
+            'unavailable_why'    => $locked
+                ? pick($random, array_values(PP_UNAVAILABLE_REASONS)) : null,
+            'drop_team'          => $dropTeam,
+            'drop_in_trade'      => $random->getInt(1, 10) === 1,
+            'drop_has_order'     => $random->getInt(1, 10) === 1,
+            'drop_available'     => $random->getInt(1, 5) > 1,
+            'drop_proceeds'      => pick($random, [0, $random->getInt(0, 30) * 100]),
+            'drop_extra_games'   => pick($random, [0, 0, 1]),
+            'teams_held'         => pick($random, [$maxTeams, $maxTeams - 1,
+                                                   $random->getInt(0, $maxTeams)]),
+            'funds'              => $holding['funds'],
+            'escrow'             => $holding['escrow'],
+            'extra_games'        => $holding['extra_games'],
+            'max_teams'          => $maxTeams,
+            'ranked'             => $rankPos !== null,
+            'rank_pos'           => $rankPos,
+            'mv'                 => $rankPos === null ? 0 : (26 - $rankPos) * 100,
+            'buyback_stage'      => pick($random, BUYBACK_STAGES),
+            'pending_gains'      => pick($random, [0, 0, 1, 2]),
+            'committed_cents'    => pick($random, [0, 0, $random->getInt(0, 30) * 100]),
+            'stake'              => $stake,
+            'team_extra_games'   => pick($random, [0, 0, 0, 1]),
+            'battles_possible'   => $holding['battles_possible'],
+        ];
+        $snapshot['margin_call'] = decide_margin_call($snapshot)['in_call'];
+        $marketValue = $snapshot['mv'];
+        return [
+            'order'    => [
+                'kind'        => $kind,
+                'conditional' => $kind === 'drop' && $random->getInt(1, 3) === 1,
+                'amount'      => pick($random, [
+                    $marketValue, $marketValue - 1,
+                    $marketValue + $random->getInt(0, 30) * 100,
+                    $random->getInt(1, 3000), 0,
+                ]),
+            ],
+            'snapshot' => $snapshot,
+        ];
+    });
+    return recorded('decide_market_order', $orders);
+}
+
 function write_golden(string $decider, array $cases): void
 {
     $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
@@ -680,6 +746,7 @@ $recorders = [
     'trade_allocation'         => 'record_trade_allocation',
     'decide_trade_settlement'  => 'record_trade_settlement',
     'resolve_bids'             => 'record_blind_auction',
+    'decide_market_order'      => 'record_market_order',
 ];
 $wanted = array_slice($argv, 1) ?: array_keys($recorders);
 foreach ($wanted as $decider) {
