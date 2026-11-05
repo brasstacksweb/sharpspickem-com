@@ -22,4 +22,4 @@ map, for people and coding agents alike.
 | `apps/sharps_web/` | the web API, live updates and the static front end; calls the league |
 | `test/` | project-wide checks: no comments, and the layering above |
 | `reference/pp26dev/` | selected files from the PHP app, frozen at the commit named in `AGENTS.md`; read-only |
-| `golden/` | recorded PHP behaviour the port must reproduce; `php golden/record.php` re-records it |
+| `golden/` | recorded PHP behaviour the port must reproduce: deciders in `golden/*.json`, whole leagues in `golden/season/` (see *The oracle* in `AGENTS.md`) |

@@ -144,6 +144,30 @@ differ. The Erlang must reproduce every case exactly; a disagreement is a bug in
 the other, and the rulebook decides which. A deliberate difference is translated in the
 golden test, never patched into the recording.
 
+`golden/season/` holds whole leagues: the PHP's own simulator (`setup/simulator.php`)
+playing seeded owners through its real handlers, recorded by `golden/season/record.php`
+as one step per line. A step is the setup, an owner's action with the PHP's answer, or
+the clock catching up, and each carries the polls that landed and the ledger rows it
+wrote. The PHP's database ids are recorded as names (owners, teams) or as their order of
+creation within the league (Battles, trades, transactions, orders, ledger entries), and
+times are the fixture's own, not the replay's shifted clock. The last line is the
+league's end state. `league_replay_tests` replays every trace through a league process
+and fails on any step whose answer or ledger rows differ, and on the end state.
+
+Recording needs the pp26dev repository at the commit above (`PP26DEV`, default
+`~/Projects/plassman-pickem`) and a MariaDB database holding its schema:
+
+```
+mariadb -e 'CREATE DATABASE pp26dev_sim'
+mariadb pp26dev_sim < "$PP26DEV/setup/schema.sql"
+DB_NAME=pp26dev_sim DB_USER=$USER php -d extension=pdo_mysql \
+    golden/season/record.php --year=2024 --seed=1 [--weeks=0]
+```
+
+`--weeks=0` records draft night alone. Every season runs in a transaction that is rolled
+back, and a re-record reproduces every trace except its timestamps, which move by the
+seconds the run took.
+
 ## Testing
 
 - **Break the code to check the test.** A test proves nothing until it has failed for the
