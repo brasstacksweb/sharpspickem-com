@@ -170,6 +170,105 @@ function team_record_case(string $team, array $games, array $conferenceOf): arra
     return ['in' => $in, 'out' => decide_team_record(...$in)];
 }
 
+const PLAYOFF_PERCENT = ['bye' => 3.0, 'first_round' => 3.0, 'quarterfinal' => 6.0,
+                         'semifinal' => 11.0, 'championship' => 30.0];
+
+function record_playoff_slots(): array
+{
+    $random = randomizer(14);
+    $cases = [];
+    foreach (seasons() as $season) {
+        $bracket = bracket_of($season);
+        for ($played = 0; $played <= count($bracket); $played++) {
+            $games = [...array_slice($bracket, 0, $played),
+                      ...array_map('not_yet_played', array_slice($bracket, $played))];
+            $cases[] = playoff_slots_case($games);
+            $cases[] = playoff_slots_case(with_bowls_and_shuffled($random, $games));
+        }
+    }
+    return $cases;
+}
+
+function bracket_of(array $season): array
+{
+    return array_map(fn (array $game): array => [
+        'home'        => $game['home'],
+        'away'        => $game['away'],
+        'home_points' => $game['home_points'],
+        'away_points' => $game['away_points'],
+        'completed'   => true,
+        'notes'       => $game['notes'],
+    ], $season['playoff']);
+}
+
+function not_yet_played(array $game): array
+{
+    return ['completed' => false, 'home_points' => null, 'away_points' => null] + $game;
+}
+
+function with_bowls_and_shuffled(Random\Randomizer $random, array $games): array
+{
+    $bowls = [['Peach Bowl', true], ['Gator Bowl', true],
+              ['College Football Playoff Bye Week Special', true],
+              ['Rose Bowl Game', false], ['', true]];
+    foreach ($bowls as [$notes, $completed]) {
+        $games[] = ['home' => 'Bowl Home', 'away' => 'Bowl Away', 'home_points' => 21,
+                    'away_points' => 14, 'completed' => $completed, 'notes' => $notes];
+    }
+    if ($random->getInt(0, 1) === 0) {
+        $games = array_map(fn (array $game): array
+            => ['notes' => strtolower($game['notes'])] + $game, $games);
+    }
+    return $random->shuffleArray($games);
+}
+
+function playoff_slots_case(array $games): array
+{
+    $in = ['games' => $games];
+    return ['in' => $in, 'out' => decide_playoff_slots(...$in)];
+}
+
+function record_playoff_share(): array
+{
+    $random = randomizer(15);
+    $cases = [];
+    foreach (seasons() as $season) {
+        $slots = decide_playoff_slots(bracket_of($season))['slots'];
+        if ($slots === []) {
+            continue;
+        }
+        for ($run = 0; $run < 60; $run++) {
+            $remainingPool = pick($random, [60000, 100000, $random->getInt(0, 500000)]);
+            $unrecordedPct = 100.0;
+            $houseOwnedChance = pick($random, [0, 10, 50, 100]);
+            foreach ($slots as $slot) {
+                $in = ['remainingPool' => $remainingPool,
+                       'thisPct' => PLAYOFF_PERCENT[$slot['round']],
+                       'unrecordedPct' => $unrecordedPct,
+                       'forfeited' => $random->getInt(1, 100) <= $houseOwnedChance];
+                $out = decide_playoff_share(...$in);
+                $cases[] = ['in' => $in, 'out' => $out];
+                $remainingPool = $out['remainder_after'];
+                $unrecordedPct -= $in['thisPct'];
+            }
+        }
+    }
+    return $cases;
+}
+
+function record_payout_estimates(): array
+{
+    $random = randomizer(16);
+    $rounds = array_map(fn (float $pct): array => ['pct' => $pct], PLAYOFF_PERCENT);
+    $cases = [];
+    for ($i = 0; $i < 300; $i++) {
+        $in = ['baseCents' => pick($random, [0, 60000, $random->getInt(0, 1000000)]),
+               'rounds' => $rounds];
+        $cases[] = ['in' => $in, 'out' => decide_payout_estimates(...$in)];
+    }
+    return $cases;
+}
+
 function write_golden(string $decider, array $cases): void
 {
     $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
@@ -185,6 +284,9 @@ $recorders = [
     'decide_battle_result'     => 'record_battle_result',
     'decide_battle_settlement' => 'record_battle_settlement',
     'decide_team_record'       => 'record_team_record',
+    'decide_playoff_slots'     => 'record_playoff_slots',
+    'decide_playoff_share'     => 'record_playoff_share',
+    'decide_payout_estimates'  => 'record_payout_estimates',
 ];
 $wanted = array_slice($argv, 1) ?: array_keys($recorders);
 foreach ($wanted as $decider) {
