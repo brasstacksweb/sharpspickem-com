@@ -526,6 +526,77 @@ function game_near(array $game, ?int $finishesAt, int $now, int $lastWeek): ?arr
     ];
 }
 
+function record_trade_allocation(): array
+{
+    return recorded('trade_allocation', generated(25, 600, function ($random): array {
+        $gives = pick($random, [true, true, false]);
+        $receives = $gives ? $random->getInt(0, 1) === 1 : true;
+        $cash = pick($random, [0, $random->getInt(-6000, 6000),
+                               $random->getInt(0, 6000)]);
+        return [
+            'givenBasis' => $gives ? pick($random, [0, $random->getInt(0, 6000)]) : null,
+            'receives'   => $receives,
+            'cash'       => match (true) {
+                $gives && !$receives => abs($cash),
+                !$gives              => -abs($cash),
+                default              => $cash,
+            },
+        ];
+    }));
+}
+
+function record_trade_settlement(): array
+{
+    $trades = generated(26, 3000, function ($random): array {
+        $teamA = pick($random, [10, 10, null]);
+        $teamB = $teamA === null ? 20 : pick($random, [20, 20, null]);
+        $cash = pick($random, [0, $random->getInt(-30, 30) * 100,
+                               $random->getInt(-5000, 5000)]);
+        $cash = match (true) {
+            $teamA === null => -abs($cash),
+            $teamB === null => abs($cash),
+            default         => $cash,
+        };
+        $stake = pick($random, [100, 500, 1000]);
+        $maxTeams = $random->getInt(1, 6);
+        $battlesPossible = $random->getInt(0, 4) > 0;
+        $owners = [];
+        foreach ([1 => [$teamA], 2 => [$teamB]] as $id => [$gives]) {
+            $holding = owner_holding($random);
+            $teamsHeld = pick($random, [$maxTeams, $maxTeams - 1,
+                                        $holding['teams_held']]);
+            $owners[$id] = [
+                'name'        => "Owner {$id}",
+                'funds'       => $holding['funds'],
+                'teams_held'  => max($gives === null ? 0 : 1, $teamsHeld),
+                'extra_games' => $holding['extra_games'],
+                'escrow'      => $holding['escrow'],
+            ];
+            $owners[$id]['margin_call'] = decide_margin_call([
+                'stake' => $stake, 'battles_possible' => $battlesPossible,
+            ] + $owners[$id])['in_call'];
+        }
+        $teams = [];
+        foreach ([10 => 1, 20 => 2] as $teamId => $ownerId) {
+            $teams[$teamId] = [
+                'name'        => "Team {$teamId}",
+                'owner_id'    => $random->getInt(1, 12) === 1 ? 3 : $ownerId,
+                'unavailable' => $random->getInt(1, 8) === 1,
+                'basis'       => pick($random, [0, $random->getInt(0, 6000)]),
+                'extra_games' => pick($random, [0, 0, 0, 1]),
+            ];
+        }
+        return [
+            'tx' => ['owner_a_id' => 1, 'owner_b_id' => 2, 'team_a_id' => $teamA,
+                     'team_b_id' => $teamB, 'cash_cents' => $cash,
+                     'counterparty_confirmed' => $random->getInt(1, 10) > 1],
+            's'  => ['max_teams' => $maxTeams, 'stake' => $stake, 'teams' => $teams,
+                     'owners' => $owners, 'battles_possible' => $battlesPossible],
+        ];
+    });
+    return recorded('decide_trade_settlement', $trades);
+}
+
 function write_golden(string $decider, array $cases): void
 {
     $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
@@ -553,6 +624,8 @@ $recorders = [
     'decide_calendar_warnings' => 'record_calendar_warnings',
     'game_state'               => 'record_game_state',
     'decide_availability'      => 'record_availability',
+    'trade_allocation'         => 'record_trade_allocation',
+    'decide_trade_settlement'  => 'record_trade_settlement',
 ];
 $wanted = array_slice($argv, 1) ?: array_keys($recorders);
 foreach ($wanted as $decider) {
