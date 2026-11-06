@@ -19,18 +19,38 @@ disagreements(Trace) ->
     {ok, League} = league:open(scratch_directory(Trace), opening(Setup, Fixture)),
     ok = league:observe(League, {schedule_synced, schedule(Fixture)}),
     try
-        replay(League, Played, Fixture)
+        replay(League, Played, Fixture, #{})
     after
         league:close(League)
     end.
 
-replay(_League, [], _Fixture) ->
+replay(_League, [], _Fixture, _PhpBattles) ->
     [];
-replay(League, [Step | Later], Fixture) ->
+replay(League, [Step | Later], Fixture, PhpBattles) ->
     ok = observe_facts(League, Step, Fixture),
-    case step(League, Step) of
-        [] -> replay(League, Later, Fixture);
+    Battles = maps:merge(PhpBattles, battles_made(Step)),
+    case step(League, Step, fun(Php) -> port_battle(Php, Battles, League) end) of
+        [] -> replay(League, Later, Fixture, Battles);
         Disagreement -> Disagreement
+    end.
+
+battles_made(Step) ->
+    #{Number => {Week, Home, Away}
+      || #{<<"battle">> := Number, <<"week">> := Week, <<"home">> := Home,
+           <<"away">> := Away} <- maps:get(<<"battles">>, Step, [])}.
+
+port_battle(Php, Battles, League) ->
+    case Battles of
+        #{Php := {Week, Home, Away}} -> same_matchup(Week, Home, Away, Php, League);
+        #{} -> Php
+    end.
+
+same_matchup(Week, Home, Away, Php, League) ->
+    case [Number || #{number := Number, week := W, home_team := H, away_team := A}
+                        <- league_state:battles(league:state(League)),
+                    {W, H, A} =:= {Week, Home, Away}] of
+        [] -> Php;
+        Numbers -> lists:max(Numbers)
     end.
 
 observe_facts(League, Step, Fixture) ->
@@ -47,38 +67,39 @@ observe_facts(League, Step, Fixture) ->
 opening(#{<<"at">> := At, <<"priced">> := Priced}) ->
     #{at => {utc, At}, priced => Priced}.
 
-step(League, #{<<"event">> := <<"setup">>} = Step) ->
+step(League, #{<<"event">> := <<"setup">>} = Step, Battle) ->
     Before = ledgers(League),
     Funded = [league:act(League, #{at => at(Step), actor => commissioner(League),
                                    command => {confirm_contribution, Owner, Units}})
               || #{<<"owner">> := Owner, <<"amount">> := Units} <- ledger(Step)],
-    compare(Step, lists:usort(Funded) =:= [ok], new_rows(Before, ledgers(League)));
-step(_League, #{<<"event">> := <<"clock">>} = Step) ->
-    compare(Step, true, {[], []});
-step(League, #{<<"event">> := <<"dashboard">>} = Step) ->
-    caught_up(League, Step);
-step(League, #{<<"event">> := <<"action">>, <<"status">> := Status} = Step) ->
+    compare(Step, lists:usort(Funded) =:= [ok], new_rows(Before, ledgers(League)),
+            Battle);
+step(_League, #{<<"event">> := <<"clock">>} = Step, Battle) ->
+    compare(Step, true, {[], []}, Battle);
+step(League, #{<<"event">> := <<"dashboard">>} = Step, Battle) ->
+    caught_up(League, Step, Battle);
+step(League, #{<<"event">> := <<"action">>, <<"status">> := Status} = Step, Battle) ->
     Before = ledgers(League),
     Answer = league:act(League, #{at => at(Step), actor => maps:get(<<"owner">>, Step),
-                                  command => command(Step)}),
+                                  command => command(Step, Battle)}),
     compare(Step#{<<"answer">> => Answer}, (Answer =:= ok) =:= (Status < 400),
-            new_rows(Before, ledgers(League)));
-step(League, #{<<"event">> := <<"week_end">>} = Step) ->
-    caught_up(League, Step)
+            new_rows(Before, ledgers(League)), Battle);
+step(League, #{<<"event">> := <<"week_end">>} = Step, Battle) ->
+    caught_up(League, Step, Battle)
         ++ same_state(snapshot(Step), port_snapshot(league:state(League)), Step);
-step(League, #{<<"event">> := <<"end">>} = Step) ->
+step(League, #{<<"event">> := <<"end">>} = Step, _Battle) ->
     State = league:state(League),
     same_state((snapshot(Step))#{draft => binary_to_atom(maps:get(<<"draft">>, Step))},
                (port_snapshot(State))#{draft => draft_status(State)}, Step).
 
-caught_up(League, Step) ->
+caught_up(League, Step, Battle) ->
     Before = ledgers(League),
     ok = league:catch_up(League, at(Step)),
-    compare(Step, true, new_rows(Before, ledgers(League))).
+    compare(Step, true, new_rows(Before, ledgers(League)), Battle).
 
-compare(#{<<"ledger">> := Recorded} = Step, SameAnswer, {OwnerRows, HouseRows}) ->
-    Expected = {[row(Row) || #{<<"book">> := <<"owner">>} = Row <- Recorded],
-                [row(Row) || #{<<"book">> := <<"house">>} = Row <- Recorded]},
+compare(#{<<"ledger">> := Recorded} = Step, SameAnswer, {OwnerRows, HouseRows}, Battle) ->
+    Expected = {[row(Row, Battle) || #{<<"book">> := <<"owner">>} = Row <- Recorded],
+                [row(Row, Battle) || #{<<"book">> := <<"house">>} = Row <- Recorded]},
     case SameAnswer andalso Expected =:= {OwnerRows, HouseRows} of
         true -> [];
         false -> [#{step => without_facts(Step), php => Expected,
@@ -90,7 +111,7 @@ same_state(Php, Port, Step) -> [#{step => without_facts(Step), php => Php, port 
 
 without_facts(Step) ->
     maps:without([<<"ledger">>, <<"polls">>, <<"openings">>, <<"boundaries">>,
-                  <<"teams">>, <<"funds">>], Step).
+                  <<"teams">>, <<"funds">>, <<"battles">>], Step).
 
 snapshot(#{<<"funds">> := Funds, <<"teams">> := Teams, <<"house">> := House}) ->
     #{funds => Funds, house => House,
@@ -108,36 +129,40 @@ draft_status(#{draft := #{stage := setup}}) -> setup;
 draft_status(#{draft := #{stage := {picking, _Slot}}}) -> active;
 draft_status(#{draft := #{stage := complete}}) -> complete.
 
-command(#{<<"action">> := Action} = Step) ->
-    command(Action, maps:get(<<"in">>, Step, #{})).
+command(#{<<"action">> := Action} = Step, Battle) ->
+    case action(Action, maps:get(<<"in">>, Step, #{})) of
+        {raise_stake, Php, Stake} -> {raise_stake, Battle(Php), Stake};
+        {answer_raise, Php, Answer} -> {answer_raise, Battle(Php), Answer};
+        Command -> Command
+    end.
 
-command(<<"create_draft">>, _In) -> create_draft;
-command(<<"set_draft_order">>, In) -> {set_draft_order, maps:get(<<"owner_ids">>, In)};
-command(<<"start_draft">>, _In) -> start_draft;
-command(<<"draft_select">>, In) -> {draft_select, team(In)};
-command(<<"draft_pass">>, _In) -> draft_pass;
-command(<<"undo_pick">>, _In) -> undo_pick;
-command(<<"submit_bid">>, In) ->
+action(<<"create_draft">>, _In) -> create_draft;
+action(<<"set_draft_order">>, In) -> {set_draft_order, maps:get(<<"owner_ids">>, In)};
+action(<<"start_draft">>, _In) -> start_draft;
+action(<<"draft_select">>, In) -> {draft_select, team(In)};
+action(<<"draft_pass">>, _In) -> draft_pass;
+action(<<"undo_pick">>, _In) -> undo_pick;
+action(<<"submit_bid">>, In) ->
     {order, {bid, units(maps:get(<<"amount">>, In))}, team(In)};
-command(<<"add_free_team">>, In) -> {order, add, team(In)};
-command(<<"drop_team">>, In) -> {order, drop, team(In)};
-command(<<"submit_drop_order">>, In) -> {order, conditional_drop, team(In)};
-command(<<"sale_to_house">>, In) -> {order, sale, team(In)};
-command(<<"cancel_order">>, In) -> {cancel_order, number(In, <<"order_id">>)};
-command(<<"reorder_bid">>, In) ->
+action(<<"add_free_team">>, In) -> {order, add, team(In)};
+action(<<"drop_team">>, In) -> {order, drop, team(In)};
+action(<<"submit_drop_order">>, In) -> {order, conditional_drop, team(In)};
+action(<<"sale_to_house">>, In) -> {order, sale, team(In)};
+action(<<"cancel_order">>, In) -> {cancel_order, number(In, <<"order_id">>)};
+action(<<"reorder_bid">>, In) ->
     Direction = binary_to_atom(maps:get(<<"direction">>, In)),
     {reorder_bid, number(In, <<"order_id">>), Direction};
-command(<<"propose_trade">>, In) ->
+action(<<"propose_trade">>, In) ->
     {propose_trade, #{to => maps:get(<<"to_owner_id">>, In),
                       sending => team_or_none(maps:get(<<"team_out_id">>, In)),
                       receiving => team_or_none(maps:get(<<"team_in_id">>, In)),
                       cash_units => units(maps:get(<<"cash">>, In)),
                       paid_by => paid_by(maps:get(<<"cash_direction">>, In))}};
-command(<<"confirm_trade">>, In) -> {confirm_trade, number(In, <<"tx_id">>)};
-command(<<"cancel_trade">>, In) -> {cancel_trade, number(In, <<"tx_id">>)};
-command(<<"raise_battle_stake">>, In) ->
+action(<<"confirm_trade">>, In) -> {confirm_trade, number(In, <<"tx_id">>)};
+action(<<"cancel_trade">>, In) -> {cancel_trade, number(In, <<"tx_id">>)};
+action(<<"raise_battle_stake">>, In) ->
     {raise_stake, number(In, <<"battle_id">>), units(maps:get(<<"stake">>, In))};
-command(<<"respond_battle_stake">>, In) ->
+action(<<"respond_battle_stake">>, In) ->
     {answer_raise, number(In, <<"battle_id">>), accepted(maps:get(<<"accept">>, In))}.
 
 team(#{<<"team_id">> := null}) -> <<>>;
@@ -175,15 +200,18 @@ new_rows({OwnerBefore, HouseBefore}, {OwnerAfter, HouseAfter}) ->
      lists:nthtail(length(HouseBefore), HouseAfter)}.
 
 row(#{<<"entry">> := Entry, <<"owner">> := Owner, <<"type">> := Type,
-      <<"amount">> := Amount, <<"balance_after">> := After, <<"related">> := Related}) ->
+      <<"amount">> := Amount, <<"balance_after">> := After, <<"related">> := Related},
+    Battle) ->
     #{entry => Entry, owner => none_if_null(Owner), type => binary_to_atom(Type),
-      amount_units => Amount, balance_after_units => After, related => related(Related)}.
+      amount_units => Amount, balance_after_units => After,
+      related => related(Related, Battle)}.
 
 none_if_null(null) -> none;
 none_if_null(Owner) -> Owner.
 
-related(null) -> none;
-related([Kind, Id]) -> {binary_to_atom(Kind), Id}.
+related(null, _Battle) -> none;
+related([<<"battle">>, Php], Battle) -> {battle, Battle(Php)};
+related([Kind, Id], _Battle) -> {binary_to_atom(Kind), Id}.
 
 at(#{<<"at">> := At}) -> {utc, At}.
 

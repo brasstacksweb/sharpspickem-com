@@ -5,10 +5,11 @@ declare(strict_types=1);
 $pp26dev = getenv('PP26DEV') ?: getenv('HOME') . '/Projects/plassman-pickem';
 require $pp26dev . '/setup/simulator.php';
 
-$options = getopt('', ['year::', 'seed::', 'weeks::']);
+$options = getopt('', ['year::', 'seed::', 'weeks::', 'twice']);
 $year = (int) ($options['year'] ?? 2024);
 $seed = (int) ($options['seed'] ?? 1);
 $weeks = (int) ($options['weeks'] ?? 99);
+$twice = isset($options['twice']);
 
 final class Trace
 {
@@ -17,6 +18,7 @@ final class Trace
     public array $seen = [];
     private array $lastFacts = [];
     private array $settledOpenings = [];
+    private array $battlesSeen = [];
     private int $ownerMark = 0;
     private int $houseMark = 0;
     private int $pollMark = 0;
@@ -49,9 +51,10 @@ final class Trace
         if ($this->leagueId === null) {
             return;
         }
-        $this->events[] = ['event' => $event, 'at' => $at ?? $this->fixtureNow()] + $detail
+        $at ??= $this->fixtureNow();
+        $this->events[] = ['event' => $event, 'at' => $at] + $detail
             + ['polls' => $this->newPolls(), 'ledger' => $this->newLedgerRows()]
-            + $this->changedFacts();
+            + $this->changedFacts() + $this->newBattles();
         foreach (NUMBERED as $kind => $table) {
             $ids = db()->prepare("SELECT id FROM {$table} WHERE league_id = ?");
             $ids->execute([$this->leagueId]);
@@ -73,20 +76,45 @@ final class Trace
         return $firstKickoff - $this->firstKickoff;
     }
 
+    private function newBattles(): array
+    {
+        $battles = db()->prepare('SELECT b.id, b.week, home.name AS home,
+                                         away.name AS away
+                                    FROM battles b
+                                    JOIN teams home ON home.id = b.team_a_id
+                                    JOIN teams away ON away.id = b.team_b_id
+                                   WHERE b.league_id = ? ORDER BY b.id');
+        $battles->execute([$this->leagueId]);
+        $new = [];
+        foreach ($battles->fetchAll() as $battle) {
+            if (!isset($this->battlesSeen[$battle['id']])) {
+                $this->battlesSeen[$battle['id']] = true;
+                $new[] = ['battle' => (int) $battle['id'],
+                          'week'   => (int) $battle['week'],
+                          'home'   => $battle['home'],
+                          'away'   => $battle['away']];
+            }
+        }
+        return $new === [] ? [] : ['battles' => $new];
+    }
+
     private function changedFacts(): array
     {
         $tz = league_tz($this->leagueId);
         $shift = $this->shift();
         $instant = fn (string $wallTime): int
             => (new DateTimeImmutable($wallTime, $tz))->getTimestamp() - $shift;
-        $openings = db()->prepare("SELECT id, settles_at, poll_cycle_id IS NOT NULL AS priced,
-                                          status
+        $midnight = fn (string $setting): int
+            => $instant(setting($setting, '', $this->leagueId) . ' 00:00:00');
+        $openings = db()->prepare("SELECT id, settles_at, status,
+                                          poll_cycle_id IS NOT NULL AS priced
                                      FROM market_openings WHERE league_id = ?
                                  ORDER BY settles_at");
         $openings->execute([$this->leagueId]);
         $scheduled = [];
         foreach ($openings->fetchAll() as $opening) {
-            if ($opening['status'] === 'open' || !isset($this->settledOpenings[$opening['id']])) {
+            $settled = isset($this->settledOpenings[$opening['id']]);
+            if ($opening['status'] === 'open' || !$settled) {
                 $scheduled[] = ['at' => $instant($opening['settles_at']),
                                 'priced' => (bool) $opening['priced']];
             }
@@ -97,10 +125,8 @@ final class Trace
         $facts = [
             'openings'   => $scheduled,
             'boundaries' => [
-                'narrows_at' => $instant(setting('buyback_narrows_on', '', $this->leagueId)
-                                         . ' 00:00:00'),
-                'closes_at'  => $instant(setting('buyback_closes_on', '', $this->leagueId)
-                                         . ' 00:00:00'),
+                'narrows_at' => $midnight('buyback_narrows_on'),
+                'closes_at'  => $midnight('buyback_closes_on'),
             ],
         ];
         $changed = array_filter($facts, fn (array $fact, string $name): bool
@@ -256,6 +282,11 @@ final class Ids
         if (isset($event['ledger'])) {
             $event['ledger'] = array_map([$this, 'ledgerRow'], $event['ledger']);
         }
+        if (isset($event['battles'])) {
+            $event['battles'] = array_map(fn (array $battle): array
+                => ['battle' => $this->of('battle', $battle['battle'])] + $battle,
+                $event['battles']);
+        }
         return $event;
     }
 
@@ -292,11 +323,73 @@ final class Ids
     }
 }
 
+function owners_act(int $leagueId, array $owners, callable $rng, callable $call,
+                     callable $policy): void
+{
+    for ($i = count($owners) - 1; $i > 0; $i--) {
+        $j = $rng($i + 1);
+        [$owners[$i], $owners[$j]] = [$owners[$j], $owners[$i]];
+    }
+    foreach ($owners as $owner) {
+        $_SESSION['user_id'] = (int) $owner['user_id'];
+        $_SESSION['league_id'] = $leagueId;
+        flush_caches();
+        $membership = active_membership();
+        if (!$membership) {
+            continue;
+        }
+        foreach ($policy(dashboard_data($membership), $rng) as $intent) {
+            $call('owner', $intent['action'], $intent['in'], (int) $owner['user_id'],
+                  $leagueId);
+            flush_caches();
+        }
+    }
+}
+
+function season_acting_twice(array $opts): array
+{
+    $seed = (int) $opts['seed'];
+    $year = (int) $opts['year'];
+    $rng = sim_rng($seed);
+    $fixture = season_fixture_load($year);
+    $people = array_merge(FACTORY_PEOPLE, [['dana', 'Dana'], ['marcus', 'Marcus'],
+                                           ['priya', 'Priya'], ['wes', 'Wes']]);
+    $floor = (int) round(0.85 * minimum_buy_in_cents(
+        count($people), (int) PP_LEAGUE_SETTINGS['max_teams']['default'],
+        (int) PP_LEAGUE_SETTINGS['battle_stake_cents']['default']));
+    $league = factory_league([
+        'name'   => "Recorded {$year} · seed {$seed} · acting twice a week",
+        'people' => $people,
+        'season' => $year,
+        'teams'  => 0,
+        'fund'   => $floor + $rng((int) round($floor * 1.35)),
+    ]);
+    $leagueId = $league['league_id'];
+    season_fixture_teams($leagueId, $fixture);
+    $calendar = replay_calendar($fixture);
+    $delta = replay_delta($calendar, 1, 'open');
+    replay_write_games($fixture, $calendar, $year, $delta);
+    replay_set_boundaries($leagueId, $calendar, $delta);
+    replay_apply_poll($leagueId, $fixture, $calendar, 1, $delta);
+    sim_draft($leagueId, $league['owners'], $rng, $opts['call']);
+    $lastWeek = min((int) $opts['weeks'], (int) ($fixture['last_week'] ?? 14));
+    for ($week = 1; $week <= $lastWeek; $week++) {
+        foreach (['open', 'aftermath'] as $moment) {
+            $delta = replay_enter_week($leagueId, $fixture, $calendar, $year, $delta,
+                                       $week, $moment);
+            owners_act($leagueId, $league['owners'], $rng, $opts['call'],
+                       $opts['policy']);
+        }
+        ($opts['check'])($week, $leagueId);
+    }
+    return [];
+}
+
 $trace = new Trace(season_fixture_load($year));
 $pdo = db();
 $pdo->beginTransaction();
 try {
-    $result = sim_run([
+    ($twice ? 'season_acting_twice' : 'sim_run')([
         'seed'  => $seed,
         'year'  => $year,
         'weeks' => $weeks,
@@ -339,7 +432,8 @@ try {
     $pdo->rollBack();
 }
 
-$file = __DIR__ . "/{$year}-seed-{$seed}" . ($weeks === 0 ? '-draft' : '') . '.json';
+$file = __DIR__ . "/{$year}-seed-{$seed}" . ($weeks === 0 ? '-draft' : '')
+       . ($twice ? '-twice' : '') . '.json';
 $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR;
 $events = $trace->events;
 $commit = trim((string) shell_exec('git -C ' . escapeshellarg($pp26dev)
@@ -348,5 +442,8 @@ file_put_contents($file, json_encode(['pp26dev' => $commit, 'year' => $year,
                                       'seed' => $seed], $flags) . "\n"
     . implode("\n", array_map(fn (array $event): string => json_encode($event, $flags),
                               $events)) . "\n");
+$answers = array_count_values(array_map(fn (array $event): string
+    => $event['status'] < 400 ? 'accepted' : 'refused',
+    array_filter($events, fn (array $event): bool => $event['event'] === 'action')));
 printf("%s: %d events, %d accepted, %d refused\n", basename($file), count($events),
-       $result['accepted'], $result['refused']);
+       $answers['accepted'] ?? 0, $answers['refused'] ?? 0);

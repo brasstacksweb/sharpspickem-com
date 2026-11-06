@@ -168,9 +168,15 @@ DB_NAME=pp26dev_sim DB_USER=$USER php -d extension=pdo_mysql \
     golden/season/record.php --year=2024 --seed=1 [--weeks=0]
 ```
 
-`--weeks=0` records draft night alone. Every season runs in a transaction that is rolled
-back, and a re-record reproduces every trace except its timestamps, which move by the
-seconds the run took.
+`--weeks=0` records draft night alone. `--twice` has the owners act twice a week: at the
+opening, as the simulator does, and again after the weekend's games, before the next poll
+reprices the board, when most teams are off it and orders queue for the next opening.
+The simulator alone never queues an order that settles there, so the blind auction and
+the opening's other steps are tested only by `--twice` seasons.
+
+Every season runs in a transaction that is rolled back. A re-record reproduces a draft
+night exactly apart from its timestamps, which move by the seconds the run took; a whole
+season can differ by a decision or two that fall within seconds of a time boundary.
 
 ## Testing
 
