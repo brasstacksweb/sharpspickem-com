@@ -178,6 +178,12 @@ Every season runs in a transaction that is rolled back. A re-record reproduces a
 night exactly apart from its timestamps, which move by the seconds the run took; a whole
 season can differ by a decision or two that fall within seconds of a time boundary.
 
+The PHP reads games `ORDER BY kickoff_at` with no tie-break, and MariaDB now and then
+returns two games kicking off together out of schedule order, so their Battles are created
+and bound the other way round. The port takes schedule order. A recording in which that
+happened is not written: `record.php` exits 1 naming the games, and the season is recorded
+again.
+
 ## Testing
 
 - **Break the code to check the test.** A test proves nothing until it has failed for the

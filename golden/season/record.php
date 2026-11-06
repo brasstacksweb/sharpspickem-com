@@ -432,6 +432,40 @@ try {
     $pdo->rollBack();
 }
 
+function ties_against_the_schedule(array $events, array $fixture): array
+{
+    $place = [];
+    foreach ($fixture['games'] as $week => $games) {
+        foreach ($games as $index => $game) {
+            $place["{$week}:{$game['home']}:{$game['away']}"] = [$game['kickoff'], $index];
+        }
+    }
+    $against = [];
+    foreach ($events as $event) {
+        $battles = $event['battles'] ?? [];
+        for ($i = 1; $i < count($battles); $i++) {
+            [$earlier, $later] = [$battles[$i - 1], $battles[$i]];
+            [$earlierKickoff, $earlierIndex]
+                = $place["{$earlier['week']}:{$earlier['home']}:{$earlier['away']}"];
+            [$laterKickoff, $laterIndex]
+                = $place["{$later['week']}:{$later['home']}:{$later['away']}"];
+            if ($earlierKickoff === $laterKickoff && $earlierIndex > $laterIndex) {
+                $against[] = "week {$earlier['week']}: {$earlier['home']} before "
+                           . "{$later['home']}";
+            }
+        }
+    }
+    return $against;
+}
+
+$against = ties_against_the_schedule($trace->events, season_fixture_load($year));
+if ($against) {
+    fwrite(STDERR, "Battles on games kicking off together were created out of schedule "
+        . "order, which MariaDB does now and then (ORDER BY kickoff_at has no tie-break). "
+        . "Nothing written; record again.\n  " . implode("\n  ", $against) . "\n");
+    exit(1);
+}
+
 $file = __DIR__ . "/{$year}-seed-{$seed}" . ($weeks === 0 ? '-draft' : '')
        . ($twice ? '-twice' : '') . '.json';
 $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR;
