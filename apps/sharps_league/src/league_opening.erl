@@ -86,13 +86,11 @@ bids(Now, State) ->
     end.
 
 bids(Bids, Now, State) ->
-    {Ranked, Unranked} = lists:partition(fun(Bid) -> ranked(Bid, State) end, Bids),
+    Ranked = [Bid || Bid <- Bids, ranked(Bid, State)],
     {Open, Held} = lists:partition(fun(Bid) -> on_the_board(Bid, Now, State) end, Ranked),
     HeldBidders = lists:usort([Owner || #{owner := Owner} <- Held]),
-    {Drops, UnusedDrops, WaitingDrops} = conditional_drops(HeldBidders, Now, State),
-    Closed = closed(Unranked) ++ closed(UnusedDrops),
-    {Closed ++ auction(Open, Drops, Now, fold(Closed, State)),
-     numbers(Held) ++ numbers(WaitingDrops)}.
+    {Drops, WaitingDrops} = conditional_drops(HeldBidders, Now, State),
+    {auction(Open, Drops, Now, State), numbers(Held) ++ numbers(WaitingDrops)}.
 
 ranked(#{team := Team}, State) ->
     league_state:rank(Team, State) =/= unranked.
@@ -104,10 +102,9 @@ conditional_drops(HeldBidders, Now, State) ->
     Held = [Drop || Drop <- pending(conditional_drop, State), still_holds(Drop, State)],
     {Usable, OffTheBoard} =
         lists:partition(fun(Drop) -> on_the_board(Drop, Now, State) end, Held),
-    {Waiting, Unused} = lists:partition(fun(#{owner := Owner}) ->
-                                                lists:member(Owner, HeldBidders)
-                                        end, OffTheBoard),
-    {maps:groups_from_list(fun(#{owner := Owner}) -> Owner end, Usable), Unused, Waiting}.
+    Waiting = [Drop || #{owner := Owner} = Drop <- OffTheBoard,
+                       lists:member(Owner, HeldBidders)],
+    {maps:groups_from_list(fun(#{owner := Owner}) -> Owner end, Usable), Waiting}.
 
 auction([], _Drops, _Now, _State) ->
     [];
