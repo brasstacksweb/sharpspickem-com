@@ -8,7 +8,7 @@
 
 -type units() :: non_neg_integer().
 
--type owner_id() :: pos_integer().
+-type owner_id() :: term().
 
 -type basis_points() :: 0..10000.
 

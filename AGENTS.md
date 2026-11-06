@@ -144,6 +144,46 @@ differ. The Erlang must reproduce every case exactly; a disagreement is a bug in
 the other, and the rulebook decides which. A deliberate difference is translated in the
 golden test, never patched into the recording.
 
+`golden/season/` holds whole leagues: the PHP's own simulator (`setup/simulator.php`)
+playing seeded owners through its real handlers, recorded by `golden/season/record.php`
+as one step per line. A step is the setup, an owner's dashboard loading (which is when
+the PHP catches a league up), an owner's action with the PHP's answer, or the end of a
+week. Each carries the polls that landed and the ledger rows it wrote, and, when they
+change, the facts the replay harness controls rather than the app: the market openings
+scheduled and §8's two boundaries, as instants. The PHP's database ids are recorded as
+names (owners, teams) or as their order of creation within the league (Battles, trades,
+transactions, orders, ledger entries), and times are the fixture's own, not the
+replay's shifted clock. Each week ends with a snapshot of funds, rosters and the House,
+and the last line is the league's end state. `league_replay_tests` replays every trace
+through a league process, catching up exactly where the PHP did, and fails on the first
+step whose answer, ledger rows or snapshot differ.
+
+Recording needs the pp26dev repository at the commit above (`PP26DEV`, default
+`~/Projects/plassman-pickem`) and a MariaDB database holding its schema:
+
+```
+mariadb -e 'CREATE DATABASE pp26dev_sim'
+mariadb pp26dev_sim < "$PP26DEV/setup/schema.sql"
+DB_NAME=pp26dev_sim DB_USER=$USER php -d extension=pdo_mysql \
+    golden/season/record.php --year=2024 --seed=1 [--weeks=0]
+```
+
+`--weeks=0` records draft night alone. `--twice` has the owners act twice a week: at the
+opening, as the simulator does, and again after the weekend's games, before the next poll
+reprices the board, when most teams are off it and orders queue for the next opening.
+The simulator alone never queues an order that settles there, so the blind auction and
+the opening's other steps are tested only by `--twice` seasons.
+
+Every season runs in a transaction that is rolled back. A re-record reproduces a draft
+night exactly apart from its timestamps, which move by the seconds the run took; a whole
+season can differ by a decision or two that fall within seconds of a time boundary.
+
+The PHP reads games `ORDER BY kickoff_at` with no tie-break, and MariaDB now and then
+returns two games kicking off together out of schedule order, so their Battles are created
+and bound the other way round. The port takes schedule order. A recording in which that
+happened is not written: `record.php` exits 1 naming the games, and the season is recorded
+again.
+
 ## Testing
 
 - **Break the code to check the test.** A test proves nothing until it has failed for the
