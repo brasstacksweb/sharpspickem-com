@@ -222,7 +222,17 @@ function week_end(int $leagueId): array
             'basis' => (int) $team['acquired_price_cents'],
         ], $teams->fetchAll()),
         'house' => house_balance($leagueId),
+        'prize_pool' => prize_pool($leagueId),
     ];
+}
+
+function prize_pool(int $leagueId): ?int
+{
+    $st = db()->prepare("SELECT svalue FROM settings
+                          WHERE league_id = ? AND skey = 'prize_pool_cents'");
+    $st->execute([$leagueId]);
+    $pool = $st->fetchColumn();
+    return $pool === false ? null : (int) $pool;
 }
 
 const NUMBERED = [
@@ -233,6 +243,7 @@ const NUMBERED = [
     'contribution' => 'contributions',
     'owner_ledger' => 'owner_funds_ledger',
     'house_ledger' => 'house_ledger',
+    'payout'       => 'payouts',
 ];
 
 final class Ids
@@ -385,11 +396,34 @@ function season_acting_twice(array $opts): array
     return [];
 }
 
+function postseason(int $leagueId, int $year, int $seed, Trace $trace, array $opts): void
+{
+    $fixture = season_fixture_load($year);
+    $calendar = replay_calendar($fixture);
+    $delta = replay_delta_observed($fixture, $year);
+    $owners = db()->prepare('SELECT user_id FROM owners WHERE league_id = ? ORDER BY id');
+    $owners->execute([$leagueId]);
+    $owners = $owners->fetchAll();
+    $rng = sim_rng($seed * 7919 + $year);
+    foreach ([...array_keys($calendar['rounds']), 'done'] as $round) {
+        $delta = replay_enter_week($leagueId, $fixture, $calendar, $year, $delta, $round,
+                                   'open');
+        lock_house($leagueId);
+        sync_payouts_for_league($leagueId, $year);
+        flush_caches();
+        $trace->settle('payouts', ['round' => $round]);
+        if ($round !== 'done') {
+            owners_act($leagueId, $owners, $rng, $opts['call'], $opts['policy']);
+        }
+        ($opts['check'])($round, $leagueId);
+    }
+}
+
 $trace = new Trace(season_fixture_load($year));
 $pdo = db();
 $pdo->beginTransaction();
 try {
-    ($twice ? 'season_acting_twice' : 'sim_run')([
+    $opts = [
         'seed'  => $seed,
         'year'  => $year,
         'weeks' => $weeks,
@@ -413,14 +447,20 @@ try {
                 (int) $_SESSION['league_id'], (int) $_SESSION['user_id'])]);
             return sim_policy_random($view, $rng);
         },
-        'check' => function (int $week, int $leagueId) use ($trace): void {
+        'check' => function (int|string $week, int $leagueId) use ($trace): void {
+            catch_up_league($leagueId);
+            flush_caches();
             $trace->settle('week_end', ['week' => $week] + week_end($leagueId));
             $bad = check_ledger_invariants($leagueId);
             if ($bad) {
                 throw new RuntimeException("week {$week}: " . implode(' | ', $bad));
             }
         },
-    ]);
+    ];
+    ($twice ? 'season_acting_twice' : 'sim_run')($opts);
+    if ($weeks >= 99) {
+        postseason($trace->leagueId, $year, $seed, $trace, $opts);
+    }
     $trace->settle('end', week_end($trace->leagueId) + [
         'draft' => (string) db()->query('SELECT status FROM drafts WHERE league_id = '
                                         . $trace->leagueId . ' ORDER BY id DESC LIMIT 1')

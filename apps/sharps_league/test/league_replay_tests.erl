@@ -91,6 +91,8 @@ step(League, #{<<"event">> := <<"action">>, <<"status">> := Status} = Step, Batt
                                   command => command(Step, Battle)}),
     compare(Step#{<<"answer">> => Answer}, (Answer =:= ok) =:= (Status < 400),
             new_rows(Before, ledgers(League)), Battle);
+step(League, #{<<"event">> := <<"payouts">>} = Step, Battle) ->
+    caught_up(League, Step, Battle);
 step(League, #{<<"event">> := <<"week_end">>} = Step, Battle) ->
     caught_up(League, Step, Battle)
         ++ same_state(snapshot(Step), port_snapshot(league:state(League)), Step);
@@ -120,8 +122,8 @@ without_facts(Step) ->
     maps:without([<<"ledger">>, <<"polls">>, <<"openings">>, <<"boundaries">>,
                   <<"teams">>, <<"funds">>, <<"battles">>], Step).
 
-snapshot(#{<<"funds">> := Funds, <<"teams">> := Teams, <<"house">> := House}) ->
-    #{funds => Funds, house => House,
+snapshot(#{<<"funds">> := Funds, <<"teams">> := Teams, <<"house">> := House} = Step) ->
+    #{funds => Funds, house => House, prize_pool => maps:get(<<"prize_pool">>, Step, null),
       teams => lists:sort([{Team, Owner, Basis}
                            || #{<<"team">> := Team, <<"owner">> := Owner,
                                 <<"basis">> := Basis} <- Teams])}.
@@ -129,6 +131,10 @@ snapshot(#{<<"funds">> := Funds, <<"teams">> := Teams, <<"house">> := House}) ->
 port_snapshot(#{owners := Owners, teams := Teams} = State) ->
     #{funds => #{Owner => Funds || Owner := #{funds_units := Funds} <- Owners},
       house => league_state:house_balance(State),
+      prize_pool => case league_state:prize_pool(State) of
+                        not_frozen -> null;
+                        Pool -> Pool
+                    end,
       teams => lists:sort([{Team, Owner, Basis}
                            || Team := #{owner := Owner, basis_units := Basis} <- Teams])}.
 
@@ -248,7 +254,8 @@ league_date(<<Year:4/binary, "-", Month:2/binary, "-", Day:2/binary>>) ->
 schedule(#{<<"games">> := Weeks} = Fixture) ->
     [game(binary_to_integer(Week), regular, Game)
      || Week := Games <- Weeks, Game <- Games]
-        ++ [game(1, postseason, Game) || Game <- maps:get(<<"playoff">>, Fixture, [])].
+        ++ [(game(1, postseason, Game))#{notes => Notes}
+            || #{<<"notes">> := Notes} = Game <- maps:get(<<"playoff">>, Fixture, [])].
 
 game(Week, SeasonType, #{<<"home">> := Home, <<"away">> := Away, <<"kickoff">> := Kickoff,
                          <<"home_points">> := HomePoints,

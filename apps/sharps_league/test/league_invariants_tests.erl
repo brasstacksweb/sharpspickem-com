@@ -56,6 +56,23 @@ reserve_test_() ->
       ?_assertEqual([], broken(with(buying(<<"Ann">>, 9020, healthy()),
                                     [{schedule_synced, [played()]}])))}].
 
+prize_pool_test_() ->
+    [{"§12: a pool paid out to the last unit breaks nothing",
+      ?_assertEqual([], broken(with(healthy(), playoff(1680))))},
+     {"§12: the House keeping any of it does; catches a share paid short",
+      ?_assertEqual([prize_pool_not_distributed], broken(with(healthy(), playoff(1679))))},
+     {"until every slot is recorded",
+      ?_assertEqual([], broken(with(healthy(), lists:droplast(playoff(1679)))))}].
+
+playoff(Championship) ->
+    [{prize_pool_frozen, 1680}
+     | [{playoff_share_forfeited, #{round => Round, team => <<"Rice">>}}
+        || {Round, _Share, Games}
+               <- lists:droplast(football_playoff_payout:schedule()),
+           _Game <- lists:seq(1, Games)]]
+        ++ [{playoff_share_paid, #{round => championship, team => <<"Utah">>,
+                                   owner => <<"Ann">>, amount_units => Championship}}].
+
 healthy() ->
     Opened = league_state:new(
                {league_opened,

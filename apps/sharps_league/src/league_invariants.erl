@@ -22,7 +22,8 @@
   | {over_max_teams, owner(), non_neg_integer()}
   | {basis_mismatch, Team :: binary()}
   | {stakes_not_released, Battle :: pos_integer()}
-  | {under_the_reserve, owner(), #{short_units := units(), allowed_units := units()}}.
+  | {under_the_reserve, owner(), #{short_units := units(), allowed_units := units()}}
+  | {prize_pool_not_distributed, #{pool_units := units(), paid_units := units()}}.
 
 -define(EXTERNAL_TO_OWNERS, [contribution, commissioner_adjustment, reversal,
                              season_settlement]).
@@ -47,7 +48,8 @@ broken(Now, State) ->
                   within_max_teams(State),
                   bases_match_ownership(State),
                   stakes_released(Books, State),
-                  reserves_kept(Now, Books, State)]).
+                  reserves_kept(Now, Books, State),
+                  prize_pool_distributed(Books, State)]).
 
 books(#{owners := Owners} = State) ->
     OwnerRows = league_state:owner_ledger(State),
@@ -186,3 +188,15 @@ stakes_lost(Owner, Battles, Winners) ->
 set_by_the_commissioner(Rows) ->
     lists:sum([-Amount || #{type := Type, amount_units := Amount} <- Rows, Amount < 0,
                           lists:member(Type, ?SET_BY_THE_COMMISSIONER)]).
+
+prize_pool_distributed(#{house_rows := HouseRows}, State) ->
+    Slots = lists:sum([Games || {_Round, _Share, Games}
+                                    <- football_playoff_payout:schedule()]),
+    case {league_state:prize_pool(State), length(league_state:playoff_slots(State))} of
+        {Pool, Slots} when is_integer(Pool) ->
+            Paid = -sum([Row || #{type := payout} = Row <- HouseRows]),
+            [{prize_pool_not_distributed, #{pool_units => Pool, paid_units => Paid}}
+             || Paid =/= Pool];
+        {_PoolOrNot, _Recorded} ->
+            []
+    end.

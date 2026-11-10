@@ -10,13 +10,15 @@ catch_up(Now, State) ->
         lists:foldl(fun(Step, {SoFar, Before}) ->
                             New = step(Step, Now, Before),
                             {SoFar ++ New, fold(New, Before)}
-                    end, {[], State}, [openings, bind, settle, create]),
+                    end, {[], State}, [openings, bind, settle, create, freeze, pay]),
     Events.
 
 step(openings, Now, State) -> openings(Now, State);
 step(bind, Now, State) -> league_battles:bound(Now, State);
 step(settle, Now, State) -> league_battles:settled(Now, State);
-step(create, Now, State) -> battles_created(Now, State).
+step(create, Now, State) -> battles_created(Now, State);
+step(freeze, Now, State) -> league_playoff:frozen(Now, State);
+step(pay, Now, State) -> league_playoff:paid(Now, State).
 
 openings(Now, State) ->
     Due = [Opening || #{at := At} = Opening <- lists:sort(league_state:openings(State)),

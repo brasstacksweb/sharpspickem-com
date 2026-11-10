@@ -145,18 +145,23 @@ the other, and the rulebook decides which. A deliberate difference is translated
 golden test, never patched into the recording.
 
 `golden/season/` holds whole leagues: the PHP's own simulator (`setup/simulator.php`)
-playing seeded owners through its real handlers, recorded by `golden/season/record.php`
-as one step per line. A step is the setup, an owner's dashboard loading (which is when
-the PHP catches a league up), an owner's action with the PHP's answer, or the end of a
-week. Each carries the polls that landed and the ledger rows it wrote, and, when they
-change, the facts the replay harness controls rather than the app: the market openings
-scheduled and §8's two boundaries, as instants. The PHP's database ids are recorded as
-names (owners, teams) or as their order of creation within the league (Battles, trades,
-transactions, orders, ledger entries), and times are the fixture's own, not the
-replay's shifted clock. Each week ends with a snapshot of funds, rosters and the House,
-and the last line is the league's end state. `league_replay_tests` replays every trace
-through a league process, catching up exactly where the PHP did, and fails on the first
-step whose answer, ledger rows or snapshot differ.
+playing seeded owners through its real handlers, recorded by `golden/season/record.php` as
+one step per line. A step is the setup, an owner's dashboard loading (which is when the
+PHP catches a league up), an owner's action with the PHP's answer, or the end of a week.
+Each carries the polls that landed and the ledger rows it wrote, and, when they change,
+the facts the replay harness controls rather than the app: the market openings scheduled
+and §8's two boundaries, as instants. The PHP's database ids are recorded as names
+(owners, teams) or as their order of creation within the league (Battles, trades,
+transactions, orders, playoff payouts, ledger entries), and times are the fixture's own,
+not the replay's shifted clock. Each week ends with the league caught up and a snapshot of
+funds, rosters, the House and, once §12 has frozen it, the Prize Pool. After the regular
+season the league is taken through the Playoff a round at a time: the day before each
+round, and once more after the National Championship, it catches up and the PHP's payout
+sync runs (a `payouts` step), then the owners act and a snapshot closes the round. The
+2022 and 2023 fixtures hold no bracket, so only 2024 and 2025 pay anything out. The last
+line is the league's end state. `league_replay_tests` replays every trace through a league
+process, catching up exactly where the PHP did, and fails on the first step whose answer,
+ledger rows or snapshot differ.
 
 Recording needs the pp26dev repository at the commit above (`PP26DEV`, default
 `~/Projects/plassman-pickem`) and a MariaDB database holding its schema:
