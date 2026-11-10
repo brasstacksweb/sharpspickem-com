@@ -10,10 +10,14 @@ port(#{<<"teams">> := Lots, <<"owners">> := Owners, <<"maxTeams">> := MaxTeams,
     Decisions = football_blind_auction:resolve(
         #{lots => [lot(Lot) || Lot <- Lots],
           owners => #{binary_to_integer(Id) => owner(Owner) || Id := Owner <- Owners},
-          drops => #{binary_to_integer(Id) => OwnersDrops || Id := OwnersDrops <- Drops},
+          drops => #{binary_to_integer(Id) => as_the_php_counts_them(Dropping)
+                     || Id := Dropping <- Drops},
           max_teams => MaxTeams, stake_units => Stake,
           battle_season => battle_season(Possible)}),
     [as_the_php_reports_it(Decision) || Decision <- Decisions].
+
+as_the_php_counts_them(Drops) ->
+    [Drop#{extra_games_this_week => 0} || Drop <- Drops].
 
 lot(#{<<"team_id">> := Team, <<"is_house">> := HouseOwned,
       <<"extra_games">> := ExtraGames, <<"bids">> := Bids}) ->

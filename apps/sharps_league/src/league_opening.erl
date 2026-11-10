@@ -104,7 +104,12 @@ conditional_drops(HeldBidders, Now, State) ->
         lists:partition(fun(Drop) -> on_the_board(Drop, Now, State) end, Held),
     Waiting = [Drop || #{owner := Owner} = Drop <- OffTheBoard,
                        lists:member(Owner, HeldBidders)],
-    {maps:groups_from_list(fun(#{owner := Owner}) -> Owner end, Usable), Waiting}.
+    {maps:groups_from_list(fun(#{owner := Owner}) -> Owner end,
+                           fun(Drop) -> with_its_games(Drop, Now, State) end, Usable),
+     Waiting}.
+
+with_its_games(#{team := Team} = Drop, Now, State) ->
+    Drop#{extra_games_this_week => league_state:team_extra_games(Team, Now, State)}.
 
 auction([], _Drops, _Now, _State) ->
     [];
@@ -177,7 +182,7 @@ add(#{number := Number} = Order, Now, State) ->
 
 added(#{owner := Owner} = Order, Now, State) ->
     case length(league_state:held_by(Owner, State)) >= league_state:max_teams(State) of
-        false -> added_within_the_reserve(Order, none, Now, State);
+        false -> added_within_the_reserve(Order, Now, State);
         true -> added_by_making_room(Order, Now, State)
     end.
 
@@ -191,17 +196,16 @@ added_by_making_room(#{number := Number, owner := Owner} = Order, Now, State) ->
             Released = released(Owner, DropTeam, Now, State)
                 ++ [{order_closed, DropNumber}],
             Released
-                ++ added_within_the_reserve(Order, DropTeam, Now, fold(Released, State))
+                ++ added_within_the_reserve(Order, Now, fold(Released, State))
     end.
 
-added_within_the_reserve(#{number := Number, owner := Owner, team := Team}, Freed, Now,
-                         State) ->
+added_within_the_reserve(#{number := Number, owner := Owner, team := Team}, Now, State) ->
     #{extra_games_this_week := ExtraGames} = Holding = holding(Owner, Now, State),
-    Remaining = max(0, ExtraGames - freed(Freed, Now, State)),
     Spending = Holding#{cash_out_units => 0, teams_gained => 1,
                         max_teams => league_state:max_teams(State),
                         stake_units => league_state:stake(State),
-                        extra_games_this_week => Remaining,
+                        extra_games_this_week =>
+                            ExtraGames + league_state:team_extra_games(Team, Now, State),
                         battle_season => league_state:battle_season(Now, State)},
     case football_battle_reserve:headroom(Spending) of
         {fits, _Figures} -> [{team_added, #{owner => Owner, team => Team}},
@@ -211,9 +215,6 @@ added_within_the_reserve(#{number := Number, owner := Owner, team := Team}, Free
 
 house_buys(Team, Now, State) ->
     football_house_buyback:decide(sale(league_state:team(Team, State), Now, State)).
-
-freed(none, _Now, _State) -> 0;
-freed(Dropped, Now, State) -> league_state:team_extra_games(Dropped, Now, State).
 
 -spec battles(utc(), league_state:state()) -> step().
 battles(Now, State) ->

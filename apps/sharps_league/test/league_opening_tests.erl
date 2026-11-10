@@ -15,22 +15,60 @@ equal_bids_test_() ->
       "the auction a queue time that ties to the later bid",
       ?_assertEqual([<<"Ann">>], bought(settled(State)))}].
 
-freed_games_test_() ->
-    Holding = league([{<<"Ann">>, 1400}], #{max_teams => 2},
-                     [{schedule_synced, [game(<<"Utah">>, <<"Rice">>),
-                                         game(<<"Utah">>, <<"Army">>),
-                                         game(<<"Ohio State">>, <<"Rice">>),
-                                         game(<<"Ohio State">>, <<"Army">>)]},
-                      {team_added, #{owner => <<"Ann">>, team => <<"Utah">>}},
-                      {team_added, #{owner => <<"Ann">>, team => <<"Ohio State">>}},
-                      queued(1, <<"Ann">>, conditional_drop, <<"Utah">>),
-                      queued(2, <<"Ann">>, add, <<"Navy">>)]),
-    [{"§11: an add that makes room by a conditional drop takes the dropped team's "
-      "extra games off the owner's count, as the PHP does; catches the freed games "
-      "not being counted",
-      ?_assertEqual([<<"Navy">>], added(settled(Holding)))},
-     {"and a unit short of that reserve still refuses the add",
-      ?_assertEqual([], added(settled(funded(<<"Ann">>, -1, Holding))))}].
+released_games_test_() ->
+    Making = fun(Funds) ->
+                     league([{<<"Ann">>, Funds}], #{max_teams => 2},
+                            [{schedule_synced, [game(<<"Utah">>, <<"Rice">>),
+                                                game(<<"Utah">>, <<"Army">>),
+                                                game(<<"Ohio State">>, <<"Rice">>),
+                                                game(<<"Ohio State">>, <<"Army">>),
+                                                game(<<"Navy">>, <<"Rice">>)]},
+                             {team_added, #{owner => <<"Ann">>, team => <<"Utah">>}},
+                             {team_added, #{owner => <<"Ann">>, team => <<"Ohio State">>}},
+                             queued(1, <<"Ann">>, conditional_drop, <<"Utah">>),
+                             queued(2, <<"Ann">>, add, <<"Navy">>)])
+             end,
+    [{"§11: an add that makes room by a conditional drop keeps a stake for every game "
+      "the roster then plays: Ohio State's two and Navy's one",
+      ?_assertEqual([<<"Navy">>], added(settled(Making(2100))))},
+     {"so a unit short of three stakes refuses it; catches taking the released team's "
+      "games off twice, as the PHP does",
+      ?_assertEqual([], added(settled(Making(2099))))}].
+
+released_at_the_auction_test_() ->
+    Bidding = fun(Funds) ->
+                      league([{<<"Ann">>, Funds}], #{max_teams => 2},
+                             [{schedule_synced, [game(<<"Utah">>, <<"Rice">>),
+                                                 game(<<"Utah">>, <<"Army">>),
+                                                 game(<<"Ohio State">>, <<"Rice">>),
+                                                 game(<<"Navy">>, <<"Army">>)]},
+                              {poll_applied, #{week => 1, poll => ap,
+                                               ranks => #{<<"Navy">> => 20}}},
+                              {team_added, #{owner => <<"Ann">>, team => <<"Utah">>}},
+                              {team_added, #{owner => <<"Ann">>, team => <<"Ohio State">>}},
+                              queued(1, <<"Ann">>, conditional_drop, <<"Utah">>),
+                              queued(2, <<"Ann">>, bid, <<"Navy">>)])
+              end,
+    [{"§11: a team dropped to make room for a winning bid takes its second game off the "
+      "reserve; catches the league giving the auction the drop without its games",
+      ?_assertEqual([<<"Ann">>], bought(settled(Bidding(2300))))},
+     {"and the bid still leaves a stake for each game Ohio State and Navy play",
+      ?_assertEqual([], bought(settled(Bidding(2299))))}].
+
+acquired_games_test_() ->
+    Adding = fun(Funds) ->
+                     league([{<<"Ann">>, Funds}], #{},
+                            [{schedule_synced, [game(<<"Utah">>, <<"Rice">>),
+                                                game(<<"Navy">>, <<"Rice">>),
+                                                game(<<"Navy">>, <<"Army">>)]},
+                             {team_added, #{owner => <<"Ann">>, team => <<"Utah">>}},
+                             queued(1, <<"Ann">>, add, <<"Navy">>)])
+             end,
+    [{"§11: a free add keeps a stake for each game the added team plays this week",
+      ?_assertEqual([<<"Navy">>], added(settled(Adding(2100))))},
+     {"so a unit short of three stakes refuses it; catches leaving out the added team's "
+      "second game, as the PHP does",
+      ?_assertEqual([], added(settled(Adding(2099))))}].
 
 league(Owners, Settings, Events) ->
     Names = [Owner || {Owner, _Funds} <- Owners],
