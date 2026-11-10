@@ -157,9 +157,11 @@ not the replay's shifted clock. Each week ends with the league caught up and a s
 funds, rosters, the House and, once §12 has frozen it, the Prize Pool. After the regular
 season the league is taken through the Playoff a round at a time: the day before each
 round, and once more after the National Championship, it catches up and the PHP's payout
-sync runs (a `payouts` step), then the owners act and a snapshot closes the round. The
-2022 and 2023 fixtures hold no bracket, so only 2024 and 2025 pay anything out. The last
-line is the league's end state. `league_replay_tests` replays every trace through a league
+sync runs (a `payouts` step), then the owners act, the Commissioner tries to settle the
+season, and a snapshot closes the round. Every try is refused until the last, after the
+National Championship, which settles it; a second try then is refused as already settled.
+The 2022 and 2023 fixtures hold no bracket, so only 2024 and 2025 pay anything out or
+settle. The last line is the league's end state. `league_replay_tests` replays every trace through a league
 process, catching up exactly where the PHP did, and fails on the first step whose answer,
 ledger rows or snapshot differ.
 
@@ -187,7 +189,9 @@ The PHP reads games `ORDER BY kickoff_at` with no tie-break, and MariaDB now and
 returns two games kicking off together out of schedule order, so their Battles are created
 and bound the other way round. The port takes schedule order. A recording in which that
 happened is not written: `record.php` exits 1 naming the games, and the season is recorded
-again.
+again. The season settlement pays owners `ORDER BY available_funds_cents DESC`, likewise
+with no tie-break; the port pays equal balances in the order the owners joined, and a
+recording that did otherwise is refused the same way.
 
 ## Testing
 

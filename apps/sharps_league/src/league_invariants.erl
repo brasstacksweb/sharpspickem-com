@@ -23,7 +23,8 @@
   | {basis_mismatch, Team :: binary()}
   | {stakes_not_released, Battle :: pos_integer()}
   | {under_the_reserve, owner(), #{short_units := units(), allowed_units := units()}}
-  | {prize_pool_not_distributed, #{pool_units := units(), paid_units := units()}}.
+  | {prize_pool_not_distributed, #{pool_units := units(), paid_units := units()}}
+  | {held_after_the_settlement, owner(), units()}.
 
 -define(EXTERNAL_TO_OWNERS, [contribution, commissioner_adjustment, reversal,
                              season_settlement]).
@@ -49,7 +50,8 @@ broken(Now, State) ->
                   bases_match_ownership(State),
                   stakes_released(Books, State),
                   reserves_kept(Now, Books, State),
-                  prize_pool_distributed(Books, State)]).
+                  prize_pool_distributed(Books, State),
+                  nothing_held_once_settled(State)]).
 
 books(#{owners := Owners} = State) ->
     OwnerRows = league_state:owner_ledger(State),
@@ -200,3 +202,9 @@ prize_pool_distributed(#{house_rows := HouseRows}, State) ->
         {_PoolOrNot, _Recorded} ->
             []
     end.
+
+nothing_held_once_settled(#{season_settled := false}) ->
+    [];
+nothing_held_once_settled(#{season_settled := true, owners := Owners}) ->
+    [{held_after_the_settlement, Owner, Funds}
+     || Owner := #{funds_units := Funds} <- maps:iterator(Owners, ordered), Funds =/= 0].

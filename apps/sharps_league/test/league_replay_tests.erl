@@ -149,6 +149,7 @@ command(#{<<"action">> := Action} = Step, Battle) ->
         Command -> Command
     end.
 
+action(<<"settle_season">>, _In) -> settle_season;
 action(<<"create_draft">>, _In) -> create_draft;
 action(<<"set_draft_order">>, In) -> {set_draft_order, maps:get(<<"owner_ids">>, In)};
 action(<<"start_draft">>, _In) -> start_draft;

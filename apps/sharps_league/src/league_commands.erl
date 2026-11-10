@@ -18,6 +18,7 @@
   | {cancel_trade, pos_integer()}
   | {raise_stake, pos_integer(), pos_integer()}
   | {answer_raise, pos_integer(), accept | decline}
+  | settle_season
   | create_draft
   | {set_draft_order, [owner()]}
   | start_draft
@@ -56,8 +57,15 @@ command({answer_raise, Number, Answer}, #{owner := Owner}, #{at := Now}, State) 
 command({confirm_contribution, _Owner, _Units}, #{commissioner := false}, _Request,
         _State) ->
     {refused, not_the_commissioner};
+command({confirm_contribution, _Owner, _Units}, _Commissioner, _Request,
+        #{season_settled := true}) ->
+    {refused, season_settled};
 command({confirm_contribution, Owner, Units}, _Commissioner, _Request, _State) ->
     [{contribution_confirmed, #{owner => Owner, units => Units}}];
+command(settle_season, #{commissioner := false}, _Request, _State) ->
+    {refused, not_the_commissioner};
+command(settle_season, _Commissioner, _Request, State) ->
+    settlement(football_season_settlement:decide(season(State)));
 command(create_draft, Actor, _Request, #{draft := Draft, owners := Owners}) ->
     case football_draft:create(Actor, Draft) of
         {created, _NoOrderYet} -> [{draft_created, #{order => in_name_order(Owners)}}];
@@ -146,3 +154,19 @@ stage_after_pick(#{owner := Owner}, #{stage := {picking, Slot}} = Draft,
     HeldAfter = TeamsHeld#{Owner => maps:get(Owner, TeamsHeld, 0) + 1},
     AfterThePick = Rosters#{teams_held := HeldAfter},
     football_draft:next(Draft, Slot, AfterThePick).
+
+season(#{owners := Owners, owner_order := Order, season_settled := Settled} = State) ->
+    Slots = lists:sum([Games || {_Round, _Share, Games}
+                                    <- football_playoff_payout:schedule()]),
+    #{prize_pool => case league_state:prize_pool(State) of
+                        not_frozen -> not_frozen;
+                        _Pool -> frozen
+                    end,
+      slots_outstanding => max(0, Slots - length(league_state:playoff_slots(State))),
+      house_units => league_state:house_balance(State),
+      settled => Settled,
+      balances => [{Owner, Funds} || Owner <- Order,
+                                     #{funds_units := Funds} <- [maps:get(Owner, Owners)]]}.
+
+settlement({settle, Payments}) -> [{season_settled, Payments}];
+settlement({refused, _Why} = Refused) -> Refused.

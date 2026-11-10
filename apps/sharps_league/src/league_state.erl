@@ -104,7 +104,8 @@
   | {playoff_share_paid, #{round := football_playoff_payout:round(), team := team(),
                            owner := owner(), amount_units := units()}}
   | {playoff_share_forfeited, playoff_slot()}
-  | {prize_pool_refunded, [{owner(), units()}]}.
+  | {prize_pool_refunded, [{owner(), units()}]}
+  | {season_settled, [{owner(), units()}]}.
 
 -type state() :: #{
     settings := map(),
@@ -128,7 +129,8 @@
     owner_ledger := [ledger_row()],
     house_ledger := [ledger_row()],
     prize_pool := units() | not_frozen,
-    playoff_slots := [football_playoff_payout:recorded()]
+    playoff_slots := [football_playoff_payout:recorded()],
+    season_settled := boolean()
 }.
 
 -spec new(event()) -> state().
@@ -141,7 +143,7 @@ new({league_opened, #{settings := Settings, commissioner := Commissioner,
       last_priced_opening => no_opening_yet, draft => no_draft, transactions => [],
       orders => #{}, orders_created => 0, trades => #{}, trades_proposed => 0,
       battles => #{}, battles_created => 0, owner_ledger => [], house_ledger => [],
-      prize_pool => not_frozen, playoff_slots => []}.
+      prize_pool => not_frozen, playoff_slots => [], season_settled => false}.
 
 -spec apply_event(event(), state()) -> state().
 apply_event({contribution_confirmed, #{owner := Owner, units := Units}}, State) ->
@@ -258,7 +260,12 @@ apply_event({prize_pool_refunded, Shares}, State) ->
     lists:foldl(fun({Owner, Share}, Before) ->
                         FromTheHouse = house_entry(Owner, payout, -Share, none, Before),
                         owner_entry(Owner, payout, Share, none, FromTheHouse)
-                end, State, Shares).
+                end, State, Shares);
+apply_event({season_settled, Payments}, State) ->
+    Paid = lists:foldl(fun({Owner, Units}, Before) ->
+                               owner_entry(Owner, season_settlement, -Units, none, Before)
+                       end, State, Payments),
+    Paid#{season_settled := true}.
 
 recorded(#{round := Round, team := Team}, Paid) ->
     #{round => Round, team => Team, paid_units => Paid}.

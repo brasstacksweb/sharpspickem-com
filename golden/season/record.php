@@ -415,6 +415,12 @@ function postseason(int $leagueId, int $year, int $seed, Trace $trace, array $op
         if ($round !== 'done') {
             owners_act($leagueId, $owners, $rng, $opts['call'], $opts['policy']);
         }
+        $settles = $round === 'done' ? 2 : 1;
+        for ($attempt = 0; $attempt < $settles; $attempt++) {
+            ($opts['call'])('commissioner', 'settle_season', [],
+                            (int) $owners[0]['user_id'], $leagueId);
+            flush_caches();
+        }
         ($opts['check'])($round, $leagueId);
     }
 }
@@ -498,11 +504,34 @@ function ties_against_the_schedule(array $events, array $fixture): array
     return $against;
 }
 
-$against = ties_against_the_schedule($trace->events, season_fixture_load($year));
+function ties_against_the_owners(array $events): array
+{
+    $place = array_flip(array_column($events[0]['owners'], 'owner'));
+    $against = [];
+    foreach ($events as $event) {
+        if (($event['action'] ?? null) !== 'settle_season' || $event['status'] >= 400) {
+            continue;
+        }
+        $rows = $event['ledger'];
+        for ($i = 1; $i < count($rows); $i++) {
+            [$earlier, $later] = [$rows[$i - 1], $rows[$i]];
+            if ($earlier['amount'] === $later['amount']
+                && $place[$earlier['owner']] > $place[$later['owner']]) {
+                $against[] = "season settlement: {$earlier['owner']} before "
+                           . "{$later['owner']}";
+            }
+        }
+    }
+    return $against;
+}
+
+$against = [...ties_against_the_schedule($trace->events, season_fixture_load($year)),
+            ...ties_against_the_owners($trace->events)];
 if ($against) {
-    fwrite(STDERR, "Battles on games kicking off together were created out of schedule "
-        . "order, which MariaDB does now and then (ORDER BY kickoff_at has no tie-break). "
-        . "Nothing written; record again.\n  " . implode("\n  ", $against) . "\n");
+    fwrite(STDERR, "Rows that tie on what MariaDB orders them by (a kickoff, or a balance "
+        . "at the season settlement) came back out of the order the port takes, which "
+        . "MariaDB does now and then. Nothing written; record again.\n  "
+        . implode("\n  ", $against) . "\n");
     exit(1);
 }
 
