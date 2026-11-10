@@ -29,9 +29,16 @@ replay(_League, [], _Fixture, _PhpBattles) ->
 replay(League, [Step | Later], Fixture, PhpBattles) ->
     ok = observe_facts(League, Step, Fixture),
     Battles = maps:merge(PhpBattles, battles_made(Step)),
-    case step(League, Step, fun(Php) -> port_battle(Php, Battles, League) end) of
+    case step(League, Step, fun(Php) -> port_battle(Php, Battles, League) end)
+             ++ invariants_hold(League, Step) of
         [] -> replay(League, Later, Fixture, Battles);
         Disagreement -> Disagreement
+    end.
+
+invariants_hold(League, Step) ->
+    case league_invariants:broken(at(Step), league:state(League)) of
+        [] -> [];
+        Broken -> [#{step => without_facts(Step), invariants_broken => Broken}]
     end.
 
 battles_made(Step) ->
