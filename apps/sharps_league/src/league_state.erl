@@ -88,6 +88,7 @@
   | {order_executed, #{owner := owner(), team := team()}}
   | {order_closed, pos_integer()}
   | {order_cancelled, pos_integer()}
+  | {order_expired, pos_integer()}
   | {orders_reprioritised, [{pos_integer(), non_neg_integer()}]}
   | {team_bought, #{owner := owner(), team := team(), price_units := units()}}
   | {team_added, #{owner := owner(), team := team()}}
@@ -97,6 +98,7 @@
   | {trade_proposed, trade()}
   | {trade_confirmed, pos_integer()}
   | {trade_cancelled, pos_integer()}
+  | {trade_expired, pos_integer()}
   | {trade_settled, pos_integer(), [football_trade:move()]}
   | {battle_created, battle()}
   | {battle_dissolved, pos_integer()}
@@ -221,6 +223,8 @@ apply_event({order_closed, Number}, #{orders := Orders} = State) ->
     State#{orders := maps:remove(Number, Orders)};
 apply_event({order_cancelled, Number}, #{orders := Orders} = State) ->
     State#{orders := maps:remove(Number, Orders)};
+apply_event({order_expired, Number}, #{orders := Orders} = State) ->
+    State#{orders := maps:remove(Number, Orders)};
 apply_event({orders_reprioritised, Priorities}, #{orders := Orders} = State) ->
     State#{orders := lists:foldl(fun reprioritised/2, Orders, Priorities)};
 apply_event({team_bought, #{owner := Owner, team := Team, price_units := Price}},
@@ -253,6 +257,8 @@ apply_event({trade_confirmed, Number}, #{trades := Trades} = State) ->
     #{Number := Trade} = Trades,
     State#{trades := Trades#{Number := Trade#{confirmed := true}}};
 apply_event({trade_cancelled, Number}, #{trades := Trades} = State) ->
+    State#{trades := maps:remove(Number, Trades)};
+apply_event({trade_expired, Number}, #{trades := Trades} = State) ->
     State#{trades := maps:remove(Number, Trades)};
 apply_event({trade_settled, Number, Moves}, #{trades := Trades} = State) ->
     #{Number := Trade} = Trades,

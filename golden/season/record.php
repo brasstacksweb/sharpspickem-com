@@ -471,6 +471,68 @@ function corrections(int $leagueId, Trace $trace, callable $call, callable $rng)
           'reason' => 'Paying myself']);
 }
 
+function left_open(int $leagueId, Trace $trace, callable $act): void
+{
+    $bidder = db()->query("SELECT id, user_id FROM owners WHERE league_id = {$leagueId}
+                            ORDER BY available_funds_cents DESC, id LIMIT 1")->fetch();
+    $_SESSION['user_id'] = (int) $bidder['user_id'];
+    $_SESSION['league_id'] = $leagueId;
+    flush_caches();
+    $view = dashboard_data(active_membership());
+    $trace->settle('dashboard', ['owner' => owner_named_by_user($leagueId,
+                                                                (int) $bidder['user_id'])]);
+    $ranked = array_values(array_filter($view['teams'], fn ($team) => $team['owner_id'] === null
+        && (int) $team['market_value_cents'] > 0));
+    usort($ranked, fn ($one, $other) => [(int) $one['market_value_cents'], (int) $one['id']]
+        <=> [(int) $other['market_value_cents'], (int) $other['id']]);
+    if ($ranked) {
+        $act((int) $bidder['user_id'], 'owner', 'submit_bid',
+             ['team_id' => (int) $ranked[0]['id'],
+              'amount' => dollars((int) $ranked[0]['market_value_cents'])]);
+    }
+    $unpromised = "SELECT t.id, o.id AS owner_id, o.user_id FROM teams t
+                     JOIN owners o ON o.id = t.owner_id
+                    WHERE t.league_id = {$leagueId}
+                      AND NOT EXISTS (SELECT 1 FROM trades r
+                                       WHERE r.status = 'pending'
+                                         AND t.id IN (r.team_a_id, r.team_b_id))";
+    $offered = db()->query("{$unpromised} ORDER BY t.id LIMIT 1")->fetch();
+    if (!$offered) {
+        return;
+    }
+    $wanted = db()->query("{$unpromised} AND o.id <> {$offered['owner_id']}
+                           ORDER BY t.id LIMIT 1")->fetch();
+    if (!$wanted) {
+        return;
+    }
+    $act((int) $offered['user_id'], 'owner', 'propose_trade',
+         ['to_owner_id' => (int) $wanted['owner_id'], 'team_out_id' => (int) $offered['id'],
+          'team_in_id' => (int) $wanted['id'], 'cash' => '0.00', 'cash_direction' => 'they_pay',
+          'note' => 'Left open']);
+}
+
+function after_the_close(int $leagueId, callable $act): void
+{
+    $trade = db()->query("SELECT r.id, a.user_id AS proposer, b.user_id AS partner
+                            FROM trades r JOIN owners a ON a.id = r.owner_a_id
+                            JOIN owners b ON b.id = r.owner_b_id
+                           WHERE r.league_id = {$leagueId} AND r.note = 'Left open'
+                        ORDER BY r.id DESC LIMIT 1")->fetch();
+    if ($trade) {
+        $act((int) $trade['partner'], 'owner', 'confirm_trade', ['tx_id' => (int) $trade['id']]);
+        $act((int) $trade['proposer'], 'owner', 'cancel_trade', ['tx_id' => (int) $trade['id']]);
+    }
+    $order = db()->query("SELECT m.id, o.user_id FROM market_orders m
+                            JOIN owners o ON o.id = m.owner_id
+                           WHERE m.league_id = {$leagueId} AND m.kind = 'bid'
+                        ORDER BY m.id DESC LIMIT 1")->fetch();
+    if ($order) {
+        $act((int) $order['user_id'], 'owner', 'reorder_bid',
+             ['order_id' => (int) $order['id'], 'direction' => 'up']);
+        $act((int) $order['user_id'], 'owner', 'cancel_order', ['order_id' => (int) $order['id']]);
+    }
+}
+
 function postseason(int $leagueId, int $year, int $seed, Trace $trace, array $opts): void
 {
     $fixture = season_fixture_load($year);
@@ -480,6 +542,17 @@ function postseason(int $leagueId, int $year, int $seed, Trace $trace, array $op
     $owners->execute([$leagueId]);
     $owners = $owners->fetchAll();
     $rng = sim_rng($seed * 7919 + $year);
+    $commissioner = (int) $owners[0]['user_id'];
+    $waiting = (int) $owners[count($owners) - 1]['user_id'];
+    $act = function (int $userId, string $file, string $action, array $in = [])
+        use ($opts, $leagueId): void {
+        ($opts['call'])($file, $action, $in, $userId, $leagueId);
+        flush_caches();
+    };
+    $closing = array_key_last($calendar['rounds']);
+    if ($closing === null) {
+        left_open($leagueId, $trace, $act);
+    }
     foreach ([...array_keys($calendar['rounds']), 'done'] as $round) {
         $delta = replay_enter_week($leagueId, $fixture, $calendar, $year, $delta, $round,
                                    'open');
@@ -487,20 +560,17 @@ function postseason(int $leagueId, int $year, int $seed, Trace $trace, array $op
         sync_payouts_for_league($leagueId, $year);
         flush_caches();
         $trace->settle('payouts', ['round' => $round]);
-        $commissioner = (int) $owners[0]['user_id'];
-        $waiting = (int) $owners[count($owners) - 1]['user_id'];
-        $act = function (int $userId, string $file, string $action, array $in = [])
-            use ($opts, $leagueId): void {
-            ($opts['call'])($file, $action, $in, $userId, $leagueId);
-            flush_caches();
-        };
         if ($round !== 'done') {
             owners_act($leagueId, $owners, $rng, $opts['call'], $opts['policy']);
+        }
+        if ($round === $closing) {
+            left_open($leagueId, $trace, $act);
         }
         if ($round === array_key_first($calendar['rounds'])) {
             $act($waiting, 'owner', 'request_additional_funds', ['amount' => '25.00']);
         }
         if ($round === 'done') {
+            after_the_close($leagueId, $act);
             $act($commissioner, 'commissioner', 'confirm_contribution',
                  ['contribution_id' => pending_contribution(owner_of($leagueId, $waiting)['id'])]);
             $lowest = db()->query("SELECT id, available_funds_cents AS funds FROM owners

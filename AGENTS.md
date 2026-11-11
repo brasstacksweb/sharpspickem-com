@@ -161,7 +161,16 @@ sync runs (a `payouts` step), then the owners act, the Commissioner tries to set
 season, and a snapshot closes the round. Every try is refused until the last, after the
 National Championship, which settles it; a second try then is refused as already settled.
 The 2022 and 2023 fixtures hold no bracket, so only 2024 and 2025 pay anything out or
-settle. The last line is the league's end state.
+settle. Just before the National Championship (in 2022 and 2023, as the regular season
+ends), the owner holding most bids on the cheapest ranked House team and two owners offer
+each other a team in a trade nobody confirms. Both are still open when §6 closes the
+market, so after the Championship the trade can be neither confirmed nor cancelled, and the
+bid neither reordered nor, to any effect, cancelled. The 2022 and 2023 fixtures hold no
+postseason games, so their market never closes: the trade is confirmed and settles there,
+and the bid can still be reordered. Record after the league's 09:00 market open: a
+recording made earlier in the day strands one of the PHP replay's openings at today's
+09:00, and the orders queued into it never settle. The last line is the league's end
+state.
 
 The Commissioner's corrections (§3, §13) are played through the PHP's own handlers too. One
 week between the fourth and the eighth, after the Commissioner's desk catches the league up

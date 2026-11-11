@@ -10,7 +10,8 @@ catch_up(Now, State) ->
         lists:foldl(fun(Step, {SoFar, Before}) ->
                             New = step(Step, Now, Before),
                             {SoFar ++ New, fold(New, Before)}
-                    end, {[], State}, [openings, bind, settle, create, freeze, pay]),
+                    end, {[], State},
+                    [openings, bind, settle, create, freeze, expire, pay]),
     Events.
 
 step(openings, Now, State) -> openings(Now, State);
@@ -18,6 +19,7 @@ step(bind, Now, State) -> league_battles:bound(Now, State);
 step(settle, Now, State) -> league_battles:settled(Now, State);
 step(create, Now, State) -> battles_created(Now, State);
 step(freeze, Now, State) -> league_playoff:frozen(Now, State);
+step(expire, Now, State) -> expired(Now, State);
 step(pay, Now, State) -> league_playoff:paid(Now, State).
 
 openings(Now, State) ->
@@ -31,6 +33,16 @@ settled(#{priced := true} = Opening, Now, State) ->
     league_opening:settle(Opening, Now, State#{last_priced_opening := Now});
 settled(Opening, Now, State) ->
     league_opening:settle(Opening, Now, State).
+
+expired(Now, State) ->
+    case league_state:season_over(Now, State) of
+        true ->
+            [{order_expired, Number}
+             || #{number := Number} <- league_state:pending_orders(State)]
+                ++ [{trade_expired, Number}
+                    || #{number := Number} <- league_state:pending_trades(State)];
+        false -> []
+    end.
 
 battles_created(Now, #{draft := #{stage := complete}} = State) ->
     league_battles:created(Now, State);
