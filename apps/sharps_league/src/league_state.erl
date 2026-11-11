@@ -8,7 +8,8 @@
          final_score/3,
          pending_orders/1, pending_trades/1, battles/1, openings/1, stake/1, max_teams/1,
          owner_ledger/1, house_ledger/1, house_balance/1, prize_pool/1, playoff_slots/1,
-         contributions/1]).
+         contributions/1, contribution/2, pending_contribution/2,
+         contributions_pending/1]).
 
 -export_type([state/0, event/0, ledger_row/0, game/0, order/0, trade/0, battle/0,
               opening/0]).
@@ -45,7 +46,8 @@
                     status := pending | accepted | settled | refunded | rejected,
                     raise := none | {offered, owner(), units()}}.
 
--type related() :: {team, team()} | {transaction | trade | battle | payout, pos_integer()}
+-type related() :: {team, team()}
+                 | {transaction | trade | battle | payout | contribution, pos_integer()}
                  | none.
 
 -type ledger_row() :: #{
@@ -54,7 +56,8 @@
     type := atom(),
     amount_units := units(),
     balance_after_units := units(),
-    related := related()
+    related := related(),
+    reason => binary()
 }.
 
 -type opening() :: #{at := utc(), priced := boolean()}.
@@ -64,7 +67,12 @@
 -type event() ::
     {league_opened, #{settings := map(), commissioner := owner(), owners := [owner()],
                       teams := [team()]}}
-  | {contribution_confirmed, #{owner := owner(), units := units()}}
+  | {contribution_requested, #{owner := owner(), units := units()}}
+  | {contribution_confirmed, pos_integer(), units()}
+  | {contribution_rejected, pos_integer()}
+  | {contribution_cancelled, pos_integer()}
+  | {contribution_reversed, pos_integer(), units()}
+  | {funds_adjusted, #{owner := owner(), units := units(), reason := binary()}}
   | {schedule_synced, [game()]}
   | {poll_applied, #{week := pos_integer(), poll := ap | cfp,
                      ranks := #{team() => 1..25}}}
@@ -112,6 +120,7 @@
     commissioner := owner(),
     owners := #{owner() => #{funds_units := units()}},
     owner_order := [owner()],
+    contributions := #{pos_integer() => contribution:contribution()},
     teams := #{team() => #{owner := owner() | house, basis_units => units()}},
     team_order := [team()],
     schedule := [game()],
@@ -138,6 +147,7 @@ new({league_opened, #{settings := Settings, commissioner := Commissioner,
                       owners := Owners, teams := Teams}}) ->
     #{settings => Settings, commissioner => Commissioner,
       owners => #{Owner => #{funds_units => 0} || Owner <- Owners}, owner_order => Owners,
+      contributions => buy_ins(Owners, Settings),
       teams => #{Team => #{owner => house} || Team <- Teams},
       team_order => Teams, schedule => [], ranks => #{}, openings => [],
       last_priced_opening => no_opening_yet, draft => no_draft, transactions => [],
@@ -145,9 +155,40 @@ new({league_opened, #{settings := Settings, commissioner := Commissioner,
       battles => #{}, battles_created => 0, owner_ledger => [], house_ledger => [],
       prize_pool => not_frozen, playoff_slots => [], season_settled => false}.
 
+buy_ins(Owners, #{buy_in_units := BuyIn}) when BuyIn > 0 ->
+    #{Number => #{owner => Owner, kind => buy_in, requested_units => BuyIn,
+                  status => pending}
+      || {Number, Owner} <- lists:enumerate(Owners)};
+buy_ins(_Owners, _NoBuyIn) ->
+    #{}.
+
 -spec apply_event(event(), state()) -> state().
-apply_event({contribution_confirmed, #{owner := Owner, units := Units}}, State) ->
-    owner_entry(Owner, contribution, Units, none, State);
+apply_event({contribution_requested, #{owner := Owner, units := Units}},
+            #{contributions := Contributions} = State) ->
+    Number = map_size(Contributions) + 1,
+    State#{contributions := Contributions#{Number => #{owner => Owner, kind => top_up,
+                                                       requested_units => Units,
+                                                       status => pending}}};
+apply_event({contribution_confirmed, Number, Units},
+            #{contributions := Contributions} = State) ->
+    #{Number := #{owner := Owner} = Contribution} = Contributions,
+    Credited = owner_entry(Owner, contribution, Units, {contribution, Number}, State),
+    Credited#{contributions := Contributions#{Number := Contribution#{
+                                                status := confirmed,
+                                                confirmed_units => Units}}};
+apply_event({contribution_rejected, Number}, State) ->
+    answered(Number, rejected, State);
+apply_event({contribution_cancelled, Number}, State) ->
+    answered(Number, cancelled, State);
+apply_event({contribution_reversed, Number, Units},
+            #{contributions := Contributions} = State) ->
+    #{Number := #{owner := Owner}} = Contributions,
+    Debited = owner_entry(Owner, reversal, -Units, {contribution, Number}, State),
+    answered(Number, reversed, Debited);
+apply_event({funds_adjusted, #{owner := Owner, units := Units, reason := Reason}}, State) ->
+    #{owner_ledger := [Entry | Earlier]} = Adjusted =
+        owner_entry(Owner, commissioner_adjustment, Units, none, State),
+    Adjusted#{owner_ledger := [Entry#{reason => Reason} | Earlier]};
 apply_event({schedule_synced, Games}, State) ->
     State#{schedule := Games};
 apply_event({poll_applied, #{ranks := Ranks}}, State) ->
@@ -266,6 +307,10 @@ apply_event({season_settled, Payments}, State) ->
                                owner_entry(Owner, season_settlement, -Units, none, Before)
                        end, State, Payments),
     Paid#{season_settled := true}.
+
+answered(Number, Status, #{contributions := Contributions} = State) ->
+    #{Number := Contribution} = Contributions,
+    State#{contributions := Contributions#{Number := Contribution#{status := Status}}}.
 
 recorded(#{round := Round, team := Team}, Paid) ->
     #{round => Round, team => Team, paid_units => Paid}.
@@ -529,12 +574,31 @@ prize_pool(#{prize_pool := Pool}) -> Pool.
 playoff_slots(#{playoff_slots := Slots}) -> Slots.
 
 -spec contributions(state()) -> [{owner(), units()}].
-contributions(#{owner_order := Owners} = State) ->
-    Contributed = [{Owner, Amount} || #{type := contribution, owner := Owner,
-                                        amount_units := Amount} <- owner_ledger(State)],
-    [{Owner, lists:sum([Amount || {Contributor, Amount} <- Contributed,
-                                  Contributor =:= Owner])}
+contributions(#{owner_order := Owners, contributions := Contributions}) ->
+    [{Owner, lists:sum([Confirmed || _Number := #{owner := Contributor, status := confirmed,
+                                                  confirmed_units := Confirmed}
+                                         <- Contributions,
+                                     Contributor =:= Owner])}
      || Owner <- Owners].
+
+-spec contribution(pos_integer(), state()) -> contribution:contribution() | not_found.
+contribution(Number, #{contributions := Contributions}) ->
+    maps:get(Number, Contributions, not_found).
+
+-spec pending_contribution(owner(), state()) -> pos_integer() | none.
+pending_contribution(Owner, #{contributions := Contributions}) ->
+    case [Number || Number := #{owner := Requester, status := pending}
+                        <- maps:iterator(Contributions, ordered),
+                    Requester =:= Owner] of
+        [] -> none;
+        [Number | _Later] -> Number
+    end.
+
+-spec contributions_pending(state()) -> non_neg_integer().
+contributions_pending(#{contributions := Contributions}) ->
+    map_size(maps:filter(fun is_pending/2, Contributions)).
+
+is_pending(_Number, #{status := Status}) -> Status =:= pending.
 
 -spec house_balance(state()) -> units().
 house_balance(#{house_ledger := []}) -> 0;

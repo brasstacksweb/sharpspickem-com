@@ -17,7 +17,7 @@ the_settlement_test_() ->
       ?_assertEqual({refused, already_settled}, act(<<"Ann">>, settle_season, settled()))},
      {"§13: and no money comes in afterwards, with nobody left to pay it out to",
       ?_assertEqual({refused, season_settled},
-                    act(<<"Ann">>, {confirm_contribution, <<"Bo">>, 100}, settled()))}].
+                    act(<<"Ann">>, {confirm_contribution, 2, 100}, settled()))}].
 
 an_unfinished_season_test() ->
     ?assertEqual({refused, {not_ready, [prize_pool_not_frozen,
@@ -42,8 +42,10 @@ opened() ->
 
 finished() ->
     with(opened(),
-         [{contribution_confirmed, #{owner => <<"Ann">>, units => 20000}},
-          {contribution_confirmed, #{owner => <<"Bo">>, units => 30000}},
+         [{contribution_requested, #{owner => <<"Ann">>, units => 20000}},
+          {contribution_confirmed, 1, 20000},
+          {contribution_requested, #{owner => <<"Bo">>, units => 30000}},
+          {contribution_confirmed, 2, 30000},
           {prize_pool_frozen, 0}
           | [{playoff_share_forfeited, #{round => Round, team => <<"Utah">>}}
              || {Round, _Share, Games} <- football_playoff_payout:schedule(),

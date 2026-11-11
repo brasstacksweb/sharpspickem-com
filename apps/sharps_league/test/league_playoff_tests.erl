@@ -59,8 +59,10 @@ season() ->
                   commissioner => <<"Ann">>, owners => [<<"Ann">>, <<"Bo">>],
                   teams => [<<"Utah">>, <<"Navy">>, <<"Rice">>]}}),
     with(Opened,
-         [{contribution_confirmed, #{owner => <<"Ann">>, units => 20000}},
-          {contribution_confirmed, #{owner => <<"Bo">>, units => 30000}},
+         [{contribution_requested, #{owner => <<"Ann">>, units => 20000}},
+          {contribution_confirmed, 1, 20000},
+          {contribution_requested, #{owner => <<"Bo">>, units => 30000}},
+          {contribution_confirmed, 2, 30000},
           {team_bought, #{owner => <<"Ann">>, team => <<"Utah">>, price_units => 20000}},
           {schedule_synced, schedule(<<"Utah">>)},
           {prize_pool_frozen, 20000}]).

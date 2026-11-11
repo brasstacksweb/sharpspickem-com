@@ -44,7 +44,9 @@ open() ->
     League.
 
 fund(League, Owner, Units) ->
-    league:act(League, request(<<"Cy">>, {confirm_contribution, Owner, Units})).
+    ok = league:act(League, request(Owner, {request_funds, Units})),
+    Number = league_state:pending_contribution(Owner, league:state(League)),
+    league:act(League, request(<<"Cy">>, {confirm_contribution, Number, as_requested})).
 
 request(Actor, Command) ->
     #{at => ?AT, actor => Actor, command => Command}.

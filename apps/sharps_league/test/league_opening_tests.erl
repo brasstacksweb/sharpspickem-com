@@ -84,8 +84,10 @@ league(Owners, Settings, Events) ->
     lists:foldl(fun league_state:apply_event/2, Funded, Events).
 
 funded(Owner, Units, State) ->
-    league_state:apply_event({contribution_confirmed, #{owner => Owner, units => Units}},
-                             State).
+    Requested = league_state:apply_event(
+                  {contribution_requested, #{owner => Owner, units => Units}}, State),
+    Number = league_state:pending_contribution(Owner, Requested),
+    league_state:apply_event({contribution_confirmed, Number, Units}, Requested).
 
 queued(Number, Owner, conditional_drop, Team) ->
     {order_queued, Order} = queued(Number, Owner, drop, Team),

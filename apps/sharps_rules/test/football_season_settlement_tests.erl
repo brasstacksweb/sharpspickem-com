@@ -27,11 +27,15 @@ not_ready_test_() ->
      {"§13: not while the House holds anything, once every payout is recorded",
       ?_assertEqual({refused, {not_ready, [{house_still_holds_units, 1}]}},
                     decide(#{house_units => 1}))},
+     {"§13: not while a contribution request is waiting for an answer",
+      ?_assertEqual({refused, {not_ready, [{contributions_pending, 2}]}},
+                    decide(#{contributions_pending => 2}))},
      {"§13: and once only",
       ?_assertEqual({refused, already_settled}, decide(#{settled => true}))}].
 
 decide(Season) ->
     football_season_settlement:decide(
       maps:merge(#{prize_pool => frozen, slots_outstanding => 0, house_units => 0,
-                   settled => false, balances => [{<<"Ann">>, 100}]},
+                   contributions_pending => 0, settled => false,
+                   balances => [{<<"Ann">>, 100}]},
                  Season)).

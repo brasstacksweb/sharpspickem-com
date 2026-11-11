@@ -161,7 +161,22 @@ sync runs (a `payouts` step), then the owners act, the Commissioner tries to set
 season, and a snapshot closes the round. Every try is refused until the last, after the
 National Championship, which settles it; a second try then is refused as already settled.
 The 2022 and 2023 fixtures hold no bracket, so only 2024 and 2025 pay anything out or
-settle. The last line is the league's end state. `league_replay_tests` replays every trace through a league
+settle. The last line is the league's end state.
+
+The Commissioner's corrections (§3, §13) are played through the PHP's own handlers too. One
+week between the fourth and the eighth, after the Commissioner's desk catches the league up
+(a `dashboard` step), an owner's top-up is confirmed for ten times what was asked, reversed,
+and confirmed again as asked; another owner withdraws a request; a third is rejected; one
+owner's funds are adjusted, with a reason, by up to $30 either way; and the refusals are
+tried: a second open request, a second reversal, a zero adjustment, one without a reason,
+and one by an owner. A top-up requested in the Playoff's first round waits, blocking the
+settlement, until it is confirmed after the National Championship, when the owner holding
+least is charged past zero, so the settlement collects from someone. After the settling,
+the Commissioner tries to reverse the latest contribution and to adjust an owner, and an
+owner asks for a top-up: refused where the season settled, accepted in 2022 and 2023. The PHP's factory funds an owner
+with one ledger row but two contributions, the buy-in and a top-up for the rest, so the
+replay confirms the buy-in for the whole amount and counts the PHP's contribution numbers
+past those top-ups. `league_replay_tests` replays every trace through a league
 process, catching up exactly where the PHP did, and fails on the first step whose answer,
 ledger rows or snapshot differ.
 

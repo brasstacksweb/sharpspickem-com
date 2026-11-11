@@ -156,7 +156,8 @@ final class Trace
                     l.balance_after_cents AS balance_after,
                     l.related_entity_type AS related_type,
                     l.related_entity_id AS related_id,
-                    l.reversal_of_ledger_entry_id AS reversal_of
+                    l.reversal_of_ledger_entry_id AS reversal_of,
+                    l.description
                FROM owner_funds_ledger l JOIN owners o ON o.id = l.owner_id
               WHERE l.league_id = ? AND l.id > ? ORDER BY l.id");
         $owner->execute([$this->leagueId, $this->ownerMark]);
@@ -165,7 +166,8 @@ final class Trace
                     l.amount_cents AS amount, l.balance_after_cents AS balance_after,
                     l.related_entity_type AS related_type,
                     l.related_entity_id AS related_id,
-                    l.reversal_of_ledger_entry_id AS reversal_of
+                    l.reversal_of_ledger_entry_id AS reversal_of,
+                    NULL AS description
                FROM house_ledger l LEFT JOIN owners o ON o.id = l.owner_id
               WHERE l.league_id = ? AND l.id > ? ORDER BY l.id");
         $house->execute([$this->leagueId, $this->houseMark]);
@@ -305,7 +307,8 @@ final class Ids
     {
         $kinds = ['team_id' => 'team', 'team_out_id' => 'team', 'team_in_id' => 'team',
                   'to_owner_id' => 'owner', 'tx_id' => 'trade', 'battle_id' => 'battle',
-                  'order_id' => 'order'];
+                  'order_id' => 'order', 'contribution_id' => 'contribution',
+                  'owner_id' => 'owner'];
         foreach ($in as $key => $value) {
             if (isset($kinds[$key])) {
                 $in[$key] = $this->of($kinds[$key], $value);
@@ -330,7 +333,8 @@ final class Ids
                 $row['related_type'], $this->of($row['related_type'], $row['related_id']),
             ],
             'reversal_of'   => $this->of($book, $row['reversal_of']),
-        ];
+        ] + ($row['type'] === 'commissioner_adjustment'
+             ? ['reason' => $row['description']] : []);
     }
 }
 
@@ -396,6 +400,77 @@ function season_acting_twice(array $opts): array
     return [];
 }
 
+function dollars(int $cents): string
+{
+    return sprintf('%s%d.%02d', $cents < 0 ? '-' : '', intdiv(abs($cents), 100),
+                   abs($cents) % 100);
+}
+
+function pending_contribution(int $ownerId): ?int
+{
+    $st = db()->prepare('SELECT id FROM contributions WHERE owner_id = ? AND status = "pending"');
+    $st->execute([$ownerId]);
+    return ($id = $st->fetchColumn()) === false ? null : (int) $id;
+}
+
+function owner_of(int $leagueId, int $userId): array
+{
+    $st = db()->prepare('SELECT id, available_funds_cents AS funds FROM owners
+                          WHERE league_id = ? AND user_id = ?');
+    $st->execute([$leagueId, $userId]);
+    return $st->fetch();
+}
+
+function corrections(int $leagueId, Trace $trace, callable $call, callable $rng): void
+{
+    $users = array_map('intval', array_column(db()->query(
+        "SELECT user_id FROM owners WHERE league_id = {$leagueId} ORDER BY id")->fetchAll(),
+        'user_id'));
+    $commissioner = array_shift($users);
+    catch_up_league($leagueId);
+    flush_caches();
+    $trace->settle('dashboard', ['owner' => owner_named_by_user($leagueId, $commissioner)]);
+    for ($i = count($users) - 1; $i > 0; $i--) {
+        $j = $rng($i + 1);
+        [$users[$i], $users[$j]] = [$users[$j], $users[$i]];
+    }
+    [$mistaken, $withdrawn, $rejected] = $users;
+    $act = function (int $userId, string $file, string $action, array $in = [])
+        use ($call, $leagueId): void {
+        $call($file, $action, $in, $userId, $leagueId);
+        flush_caches();
+    };
+    $topUp = 1000 + 100 * $rng(40);
+    $act($mistaken, 'owner', 'request_additional_funds', ['amount' => dollars($topUp)]);
+    $act($mistaken, 'owner', 'request_additional_funds', ['amount' => dollars($topUp)]);
+    $typo = pending_contribution(owner_of($leagueId, $mistaken)['id']);
+    $act($commissioner, 'commissioner', 'confirm_contribution',
+         ['contribution_id' => $typo, 'amount' => dollars(10 * $topUp)]);
+    $act($commissioner, 'commissioner', 'reverse_contribution', ['contribution_id' => $typo]);
+    $act($commissioner, 'commissioner', 'reverse_contribution', ['contribution_id' => $typo]);
+    $act($mistaken, 'owner', 'request_additional_funds', ['amount' => dollars($topUp)]);
+    $act($commissioner, 'commissioner', 'confirm_contribution',
+         ['contribution_id' => pending_contribution(owner_of($leagueId, $mistaken)['id'])]);
+    $act($withdrawn, 'owner', 'request_additional_funds', ['amount' => dollars($topUp)]);
+    $act($withdrawn, 'owner', 'cancel_fund_request',
+         ['contribution_id' => pending_contribution(owner_of($leagueId, $withdrawn)['id'])]);
+    $act($rejected, 'owner', 'request_additional_funds', ['amount' => dollars($topUp)]);
+    $act($commissioner, 'commissioner', 'reject_contribution',
+         ['contribution_id' => pending_contribution(owner_of($leagueId, $rejected)['id'])]);
+    $adjusted = owner_of($leagueId, $withdrawn)['id'];
+    $correction = (500 + 100 * $rng(25)) * ($rng(2) === 0 ? -1 : 1);
+    $act($commissioner, 'commissioner', 'adjust_available_funds',
+         ['owner_id' => $adjusted, 'amount' => dollars($correction),
+          'reason' => ' Corrected a recording error ']);
+    $act($commissioner, 'commissioner', 'adjust_available_funds',
+         ['owner_id' => $adjusted, 'amount' => '0.00', 'reason' => 'Nothing at all']);
+    $act($commissioner, 'commissioner', 'adjust_available_funds',
+         ['owner_id' => $adjusted, 'amount' => dollars($correction), 'reason' => '  ']);
+    $act($rejected, 'commissioner', 'adjust_available_funds',
+         ['owner_id' => owner_of($leagueId, $rejected)['id'], 'amount' => '5.00',
+          'reason' => 'Paying myself']);
+}
+
 function postseason(int $leagueId, int $year, int $seed, Trace $trace, array $opts): void
 {
     $fixture = season_fixture_load($year);
@@ -412,20 +487,52 @@ function postseason(int $leagueId, int $year, int $seed, Trace $trace, array $op
         sync_payouts_for_league($leagueId, $year);
         flush_caches();
         $trace->settle('payouts', ['round' => $round]);
+        $commissioner = (int) $owners[0]['user_id'];
+        $waiting = (int) $owners[count($owners) - 1]['user_id'];
+        $act = function (int $userId, string $file, string $action, array $in = [])
+            use ($opts, $leagueId): void {
+            ($opts['call'])($file, $action, $in, $userId, $leagueId);
+            flush_caches();
+        };
         if ($round !== 'done') {
             owners_act($leagueId, $owners, $rng, $opts['call'], $opts['policy']);
         }
+        if ($round === array_key_first($calendar['rounds'])) {
+            $act($waiting, 'owner', 'request_additional_funds', ['amount' => '25.00']);
+        }
+        if ($round === 'done') {
+            $act($commissioner, 'commissioner', 'confirm_contribution',
+                 ['contribution_id' => pending_contribution(owner_of($leagueId, $waiting)['id'])]);
+            $lowest = db()->query("SELECT id, available_funds_cents AS funds FROM owners
+                                    WHERE league_id = {$leagueId}
+                                    ORDER BY available_funds_cents, id LIMIT 1")->fetch();
+            $act($commissioner, 'commissioner', 'adjust_available_funds',
+                 ['owner_id' => (int) $lowest['id'],
+                  'amount' => dollars(-((int) $lowest['funds'] + 500 + 100 * $rng(25))),
+                  'reason' => 'Owes the league for a side bet']);
+        }
         $settles = $round === 'done' ? 2 : 1;
         for ($attempt = 0; $attempt < $settles; $attempt++) {
-            ($opts['call'])('commissioner', 'settle_season', [],
-                            (int) $owners[0]['user_id'], $leagueId);
-            flush_caches();
+            $act($commissioner, 'commissioner', 'settle_season');
+        }
+        if ($round === 'done') {
+            $last = (int) db()->query("SELECT MAX(id) FROM contributions
+                                        WHERE league_id = {$leagueId}")->fetchColumn();
+            $act($commissioner, 'commissioner', 'reverse_contribution',
+                 ['contribution_id' => $last]);
+            $act($commissioner, 'commissioner', 'adjust_available_funds',
+                 ['owner_id' => owner_of($leagueId, $waiting)['id'], 'amount' => '5.00',
+                  'reason' => 'Too late']);
+            $act($waiting, 'owner', 'request_additional_funds', ['amount' => '25.00']);
         }
         ($opts['check'])($round, $leagueId);
     }
 }
 
 $trace = new Trace(season_fixture_load($year));
+$correctionsRng = sim_rng($seed * 104729 + $year);
+$correctionsWeek = 4 + $correctionsRng(5);
+$callAction = null;
 $pdo = db();
 $pdo->beginTransaction();
 try {
@@ -433,8 +540,8 @@ try {
         'seed'  => $seed,
         'year'  => $year,
         'weeks' => $weeks,
-        'call'  => function (string $file, string $action, array $in, int $userId,
-                             int $leagueId) use ($trace): array {
+        'call'  => $callAction = function (string $file, string $action, array $in,
+                                           int $userId, int $leagueId) use ($trace): array {
             $trace->begin($leagueId);
             $trace->settle('clock');
             $at = $trace->fixtureNow();
@@ -453,7 +560,11 @@ try {
                 (int) $_SESSION['league_id'], (int) $_SESSION['user_id'])]);
             return sim_policy_random($view, $rng);
         },
-        'check' => function (int|string $week, int $leagueId) use ($trace): void {
+        'check' => function (int|string $week, int $leagueId)
+            use ($trace, &$callAction, $correctionsRng, $correctionsWeek): void {
+            if ($week === $correctionsWeek) {
+                corrections($leagueId, $trace, $callAction, $correctionsRng);
+            }
             catch_up_league($leagueId);
             flush_caches();
             $trace->settle('week_end', ['week' => $week] + week_end($leagueId));

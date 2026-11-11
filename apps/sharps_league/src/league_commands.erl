@@ -6,10 +6,18 @@
 
 -define(GAME_RUNTIME_SECONDS, 21600).
 
+-define(COMMISSIONER_ONLY, [confirm_contribution, reject_contribution, reverse_contribution,
+                            adjust_funds, settle_season]).
+
 -type owner() :: binary().
 
 -type command() ::
-    {confirm_contribution, owner(), pos_integer()}
+    {request_funds, integer()}
+  | {cancel_fund_request, pos_integer()}
+  | {confirm_contribution, pos_integer(), as_requested | integer()}
+  | {reject_contribution, pos_integer()}
+  | {reverse_contribution, pos_integer()}
+  | {adjust_funds, owner(), integer(), Reason :: binary()}
   | {order, {bid, pos_integer()} | add | drop | conditional_drop | sale, binary()}
   | {cancel_order, pos_integer()}
   | {reorder_bid, pos_integer(), up | down}
@@ -33,7 +41,13 @@
 decide(#{actor := Owner, command := Command} = Request,
        #{commissioner := Commissioner} = State) ->
     Actor = #{owner => Owner, commissioner => Owner =:= Commissioner},
-    as_events(command(Command, Actor, Request, State)).
+    case lists:member(name(Command), ?COMMISSIONER_ONLY) andalso Owner =/= Commissioner of
+        true -> {refused, not_the_commissioner};
+        false -> as_events(command(Command, Actor, Request, State))
+    end.
+
+name(Command) when is_atom(Command) -> Command;
+name(Command) when is_tuple(Command) -> element(1, Command).
 
 as_events({refused, _Why} = Refused) -> Refused;
 as_events(Events) when is_list(Events) -> {ok, Events}.
@@ -54,16 +68,50 @@ command({raise_stake, Number, Stake}, #{owner := Owner}, #{at := Now}, State) ->
     league_battles:raise(Owner, Number, Stake, #{now => Now, state => State});
 command({answer_raise, Number, Answer}, #{owner := Owner}, #{at := Now}, State) ->
     league_battles:answer(Owner, Number, Answer, #{now => Now, state => State});
-command({confirm_contribution, _Owner, _Units}, #{commissioner := false}, _Request,
-        _State) ->
-    {refused, not_the_commissioner};
-command({confirm_contribution, _Owner, _Units}, _Commissioner, _Request,
-        #{season_settled := true}) ->
-    {refused, season_settled};
-command({confirm_contribution, Owner, Units}, _Commissioner, _Request, _State) ->
-    [{contribution_confirmed, #{owner => Owner, units => Units}}];
-command(settle_season, #{commissioner := false}, _Request, _State) ->
-    {refused, not_the_commissioner};
+command({request_funds, Units}, #{owner := Owner}, _Request,
+        #{season_settled := Settled, settings := Settings} = State) ->
+    case contribution:request(
+           #{season_settled => Settled,
+             top_ups_enabled => maps:get(top_ups_enabled, Settings, true),
+             amount_units => Units,
+             already_pending => league_state:pending_contribution(Owner, State) =/= none}) of
+        requested -> [{contribution_requested, #{owner => Owner, units => Units}}];
+        Refused -> Refused
+    end;
+command({cancel_fund_request, Number}, #{owner := Owner}, _Request, State) ->
+    case contribution:cancel(Owner, league_state:contribution(Number, State)) of
+        cancelled -> [{contribution_cancelled, Number}];
+        unchanged -> []
+    end;
+command({confirm_contribution, Number, Amount}, _Commissioner, _Request,
+        #{season_settled := Settled} = State) ->
+    case contribution:confirm(#{season_settled => Settled,
+                                contribution => league_state:contribution(Number, State),
+                                amount_units => Amount}) of
+        {confirm, Units} -> [{contribution_confirmed, Number, Units}];
+        Refused -> Refused
+    end;
+command({reject_contribution, Number}, _Commissioner, _Request, State) ->
+    case contribution:reject(league_state:contribution(Number, State)) of
+        rejected -> [{contribution_rejected, Number}];
+        unchanged -> []
+    end;
+command({reverse_contribution, Number}, _Commissioner, _Request,
+        #{season_settled := Settled} = State) ->
+    case contribution:reverse(#{season_settled => Settled,
+                                contribution => league_state:contribution(Number, State)}) of
+        {reverse, Units} -> [{contribution_reversed, Number, Units}];
+        Refused -> Refused
+    end;
+command({adjust_funds, Owner, Units, Reason}, _Commissioner, _Request,
+        #{season_settled := Settled, owners := Owners}) ->
+    case adjustment:decide(#{amount_units => Units, reason => Reason,
+                             in_the_league => is_map_key(Owner, Owners),
+                             season_settled => Settled}) of
+        {adjust, Adjusted, Stated} ->
+            [{funds_adjusted, #{owner => Owner, units => Adjusted, reason => Stated}}];
+        Refused -> Refused
+    end;
 command(settle_season, _Commissioner, _Request, State) ->
     settlement(football_season_settlement:decide(season(State)));
 command(create_draft, Actor, _Request, #{draft := Draft, owners := Owners}) ->
@@ -164,6 +212,7 @@ season(#{owners := Owners, owner_order := Order, season_settled := Settled} = St
                     end,
       slots_outstanding => max(0, Slots - length(league_state:playoff_slots(State))),
       house_units => league_state:house_balance(State),
+      contributions_pending => league_state:contributions_pending(State),
       settled => Settled,
       balances => [{Owner, Funds} || Owner <- Order,
                                      #{funds_units := Funds} <- [maps:get(Owner, Owners)]]}.
