@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 const PP26DEV_COMMIT = 'b13448405413f1f16ae0f88676d47bbb5fc851ff';
 const PP_CFP_FIELD_SIZE = 12;
+const PP_CFP_FIRST_WEEK = 11;
 const REFERENCE = __DIR__ . '/../reference/pp26dev';
 
 date_default_timezone_set('UTC');
@@ -716,6 +717,96 @@ function record_market_order(): array
     return recorded('decide_market_order', $orders);
 }
 
+const ZONES = ['UTC', 'America/New_York', 'America/Chicago', 'America/Los_Angeles'];
+
+function season_instant(Random\Randomizer $random): int
+{
+    return $random->getInt(1787000000, 1800500000);
+}
+
+function record_opening_countdown(): array
+{
+    $random = randomizer(23);
+    $cases = [];
+    for ($i = 0; $i < 1500; $i++) {
+        $zone = pick($random, ZONES);
+        $tz = new DateTimeZone($zone);
+        $now = season_instant($random);
+        $ahead = pick($random, [0, $random->getInt(-90000, -1), $random->getInt(1, 59), 60,
+                                $random->getInt(61, 3599), 3600, $random->getInt(3601, 86399),
+                                86400, $random->getInt(86401, 900000)]);
+        $settles = (new DateTimeImmutable('@' . ($now + $ahead)))->setTimezone($tz);
+        $settlesAt = pick($random, [$settles->format('Y-m-d H:i:s'),
+                                    $settles->format('Y-m-d H:i:s'), null, '',
+                                    '2026-02-30 09:00:00', 'not a time']);
+        $valid = $settlesAt === $settles->format('Y-m-d H:i:s');
+        $cases[] = [
+            'in'  => ['settlesAt' => $settlesAt, 'nowTs' => $now, 'tz' => $zone,
+                      'settles_at_ts' => $valid ? $settles->getTimestamp() : null],
+            'out' => decide_opening_countdown($settlesAt, $now, $tz),
+        ];
+    }
+    return $cases;
+}
+
+function local_time(?int $instant, DateTimeZone $tz): ?string
+{
+    return $instant === null ? null
+        : (new DateTimeImmutable('@' . $instant))->setTimezone($tz)->format('Y-m-d H:i:s');
+}
+
+function record_next_pricing_open(): array
+{
+    $random = randomizer(24);
+    $cases = [];
+    for ($i = 0; $i < 2000; $i++) {
+        $zone = pick($random, ZONES);
+        $tz = new DateTimeZone($zone);
+        $now = season_instant($random);
+        $snapshot = [
+            'scheduled_at' => pick($random, [null, null, null, $now + $random->getInt(0, 200000)]),
+            'week'         => pick($random, [$random->getInt(1, 16), 10, 11]),
+            'last_game_at' => pick($random, [null, $now - $random->getInt(0, 600000),
+                                             $now + $random->getInt(0, 300000)]),
+            'open_time'    => pick($random, ['09:00', '09:00', '06:30', '12:15', '23:45',
+                                             '00:00', '01:30']),
+            'now'          => $now,
+            'tz'           => $tz,
+        ];
+        $out = decide_next_pricing_open($snapshot);
+        $cases[] = [
+            'in'  => ['tz' => $zone, 'now_local' => local_time($now, $tz),
+                      'last_game_local' => local_time($snapshot['last_game_at'], $tz)]
+                     + $snapshot,
+            'out' => $out + ['at_local' => local_time($out['at'], $tz)],
+        ];
+    }
+    return $cases;
+}
+
+function record_season_progress(): array
+{
+    return recorded('decide_season_progress', generated(25, 2000, function ($random): array {
+        $keys = ['draft', 'cfp_pricing', 'closes', 'battles_end'];
+        $kept = array_values(array_filter($keys, fn () => $random->getInt(0, 5) > 0));
+        $done = $random->getInt(0, count($kept));
+        $day = 1787000000;
+        $marks = [];
+        foreach ($kept as $index => $key) {
+            $day += pick($random, [0, $random->getInt(1, 40), $random->getInt(-5, 40)]) * 86400;
+            $marks[] = ['key' => $key, 'done' => $index < $done,
+                        'on' => pick($random, [date('Y-m-d', $day), date('Y-m-d', $day),
+                                               null])];
+        }
+        return [
+            'marks'   => $marks,
+            'today'   => date('Y-m-d', 1787000000 + $random->getInt(-10, 160) * 86400),
+            'week'    => pick($random, [null, $random->getInt(1, 16)]),
+            'cfpWeek' => pick($random, [11, 11, 1, 2, $random->getInt(3, 14)]),
+        ];
+    }));
+}
+
 function write_golden(string $decider, array $cases): void
 {
     $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION
@@ -747,6 +838,9 @@ $recorders = [
     'decide_trade_settlement'  => 'record_trade_settlement',
     'resolve_bids'             => 'record_blind_auction',
     'decide_market_order'      => 'record_market_order',
+    'decide_opening_countdown' => 'record_opening_countdown',
+    'decide_next_pricing_open' => 'record_next_pricing_open',
+    'decide_season_progress'   => 'record_season_progress',
 ];
 $wanted = array_slice($argv, 1) ?: array_keys($recorders);
 foreach ($wanted as $decider) {
