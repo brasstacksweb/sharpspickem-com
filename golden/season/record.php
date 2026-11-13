@@ -209,16 +209,23 @@ function owner_named_by_user(int $leagueId, int $userId): string
 
 function week_end(int $leagueId): array
 {
-    $owners = db()->prepare('SELECT display_name, available_funds_cents FROM owners
+    $owners = db()->prepare('SELECT id, display_name, available_funds_cents FROM owners
                               WHERE league_id = ? ORDER BY id');
     $owners->execute([$leagueId]);
+    $owners = $owners->fetchAll();
+    $standings = [];
+    foreach ($owners as $owner) {
+        $summary = portfolio_summary((int) $owner['id'], $leagueId);
+        $standings[$owner['display_name']] = ['portfolio' => $summary['portfolio_value_cents'],
+                                              'alpha' => $summary['alpha_cents']];
+    }
     $teams = db()->prepare('SELECT t.name, o.display_name AS owner, t.acquired_price_cents
                               FROM teams t JOIN owners o ON o.id = t.owner_id
                              WHERE t.league_id = ? ORDER BY t.name');
     $teams->execute([$leagueId]);
     return [
-        'funds' => array_column($owners->fetchAll(), 'available_funds_cents',
-                                'display_name'),
+        'funds' => array_column($owners, 'available_funds_cents', 'display_name'),
+        'standings' => $standings,
         'teams' => array_map(fn (array $team): array => [
             'team' => $team['name'], 'owner' => $team['owner'],
             'basis' => (int) $team['acquired_price_cents'],

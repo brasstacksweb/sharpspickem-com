@@ -19,8 +19,8 @@ disagreements(Trace) ->
     {ok, League} = league:open(scratch_directory(Trace), opening(Setup, Fixture)),
     ok = league:observe(League, {schedule_synced, schedule(Fixture)}),
     try
-        replay(League, Played, Fixture, #{php_battles => #{},
-                                          factory_top_ups => factory_top_ups(Setup, Funded)})
+        replay(League, Played, Fixture,
+               #{php_battles => #{}, factory_top_ups => factory_top_ups(Setup, Funded)})
     after
         league:close(League)
     end.
@@ -115,11 +115,11 @@ step(League, #{<<"event">> := <<"payouts">>} = Step, Port) ->
     caught_up(League, Step, Port);
 step(League, #{<<"event">> := <<"week_end">>} = Step, Port) ->
     caught_up(League, Step, Port)
-        ++ same_state(snapshot(Step), port_snapshot(league:state(League)), Step);
+        ++ same_state(snapshot(Step), port_snapshot(at(Step), league:state(League)), Step);
 step(League, #{<<"event">> := <<"end">>} = Step, _Port) ->
     State = league:state(League),
     same_state((snapshot(Step))#{draft => binary_to_atom(maps:get(<<"draft">>, Step))},
-               (port_snapshot(State))#{draft => draft_status(State)}, Step).
+               (port_snapshot(at(Step), State))#{draft => draft_status(State)}, Step).
 
 buy_in(Owner, League) ->
     league_state:pending_contribution(Owner, league:state(League)).
@@ -146,15 +146,18 @@ same_state(Php, Port, Step) -> [#{step => without_facts(Step), php => Php, port 
 
 without_facts(Step) ->
     maps:without([<<"ledger">>, <<"polls">>, <<"openings">>, <<"boundaries">>,
-                  <<"teams">>, <<"funds">>, <<"battles">>], Step).
+                  <<"teams">>, <<"funds">>, <<"battles">>, <<"standings">>], Step).
 
 snapshot(#{<<"funds">> := Funds, <<"teams">> := Teams, <<"house">> := House} = Step) ->
     #{funds => Funds, house => House, prize_pool => maps:get(<<"prize_pool">>, Step, null),
       teams => lists:sort([{Team, Owner, Basis}
                            || #{<<"team">> := Team, <<"owner">> := Owner,
-                                <<"basis">> := Basis} <- Teams])}.
+                                <<"basis">> := Basis} <- Teams]),
+      standings => #{Owner => {Portfolio, Alpha}
+                     || Owner := #{<<"portfolio">> := Portfolio, <<"alpha">> := Alpha}
+                            <- maps:get(<<"standings">>, Step, #{})}}.
 
-port_snapshot(#{owners := Owners, teams := Teams} = State) ->
+port_snapshot(Now, #{owners := Owners, teams := Teams} = State) ->
     #{funds => #{Owner => Funds || Owner := #{funds_units := Funds} <- Owners},
       house => league_state:house_balance(State),
       prize_pool => case league_state:prize_pool(State) of
@@ -162,7 +165,10 @@ port_snapshot(#{owners := Owners, teams := Teams} = State) ->
                         Pool -> Pool
                     end,
       teams => lists:sort([{Team, Owner, Basis}
-                           || Team := #{owner := Owner, basis_units := Basis} <- Teams])}.
+                           || Team := #{owner := Owner, basis_units := Basis} <- Teams]),
+      standings => #{Owner => {Portfolio, Alpha}
+                     || #{owner := Owner, portfolio_value_units := Portfolio,
+                          alpha_units := Alpha} <- league_standings:standings(Now, State)}}.
 
 draft_status(#{draft := #{stage := setup}}) -> setup;
 draft_status(#{draft := #{stage := {picking, _Slot}}}) -> active;

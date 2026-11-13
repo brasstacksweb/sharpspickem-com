@@ -154,7 +154,11 @@ and §8's two boundaries, as instants. The PHP's database ids are recorded as na
 (owners, teams) or as their order of creation within the league (Battles, trades,
 transactions, orders, playoff payouts, ledger entries), and times are the fixture's own,
 not the replay's shifted clock. Each week ends with the league caught up and a snapshot of
-funds, rosters, the House and, once §12 has frozen it, the Prize Pool. After the regular
+funds, rosters, the House, each owner's Portfolio Value and Alpha as the PHP's
+`portfolio_summary()` reports them, and, once §12 has frozen it, the Prize Pool. The
+standings themselves are not compared: the PHP breaks a tie in Alpha by Portfolio Value and
+then by name, where this port ranks equal Alphas together, so a tie at the top is
+co-champions (Trevor's ruling). After the regular
 season the league is taken through the Playoff a round at a time: the day before each
 round, and once more after the National Championship, it catches up and the PHP's payout
 sync runs (a `payouts` step), then the owners act, the Commissioner tries to settle the
