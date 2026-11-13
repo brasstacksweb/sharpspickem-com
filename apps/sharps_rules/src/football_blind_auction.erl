@@ -4,7 +4,7 @@
 
 -export([resolve/1]).
 
--export_type([auction/0, lot/0, bid/0, decision/0]).
+-export_type([auction/0, lot/0, bid/0, drop/0, decision/0]).
 
 -type units() :: non_neg_integer().
 
@@ -27,6 +27,8 @@
     bids := [bid()]
 }.
 
+-type drop() :: #{extra_games_this_week := non_neg_integer(), term() => term()}.
+
 -type owner_state() :: #{
     funds_units := units(),
     escrow_units := units(),
@@ -37,7 +39,7 @@
 -type auction() :: #{
     lots := [lot()],
     owners := #{owner() => owner_state()},
-    drops := #{owner() => [term()]},
+    drops := #{owner() => [drop()]},
     max_teams := non_neg_integer(),
     stake_units := units(),
     battle_season := football_battle_reserve:battle_season()
@@ -51,7 +53,7 @@
 -type decision() ::
     {skipped, team(), no_longer_a_house_team}
   | {void, team(), bid(), rejection()}
-  | {won, team(), bid(), {dropping, term()} | no_drop}.
+  | {won, team(), bid(), {dropping, drop()} | no_drop}.
 
 -spec resolve(auction()) -> [decision()].
 resolve(#{lots := Lots} = Auction) ->
@@ -130,10 +132,11 @@ after_winning(#{extra_games_this_week := LotExtraGames}, #{amount_units := Amoun
               #{funds_units := Funds, escrow_units := Escrow, teams_held := TeamsHeld,
                 extra_games_this_week := ExtraGames, drops_left := DropsLeft},
               #{max_teams := MaxTeams, stake_units := Stake, battle_season := Season}) ->
-    {_Drop, _DropsAfter, TeamsAfter} = make_room(TeamsHeld, MaxTeams, DropsLeft),
+    {Drop, _DropsAfter, TeamsAfter} = make_room(TeamsHeld, MaxTeams, DropsLeft),
     #{funds_units => Funds, cash_out_units => Amount, escrow_units => Escrow,
       teams_held => TeamsAfter, teams_gained => 0, max_teams => MaxTeams,
-      extra_games_this_week => ExtraGames + LotExtraGames, stake_units => Stake,
+      extra_games_this_week => extra_games_after(ExtraGames, Drop) + LotExtraGames,
+      stake_units => Stake,
       battle_season => Season}.
 
 win(#{team := Team, extra_games_this_week := LotExtraGames},
@@ -144,9 +147,14 @@ win(#{team := Team, extra_games_this_week := LotExtraGames},
     {Drop, DropsAfter, TeamsAfter} = make_room(TeamsHeld, MaxTeams, DropsLeft),
     Position#{funds_units := Funds - Amount,
               teams_held := TeamsAfter,
-              extra_games_this_week := ExtraGames + LotExtraGames,
+              extra_games_this_week := extra_games_after(ExtraGames, Drop) + LotExtraGames,
               drops_left := DropsAfter,
               accepted := Accepted#{Team => {Bid, Drop}}}.
+
+extra_games_after(ExtraGames, no_drop) ->
+    ExtraGames;
+extra_games_after(ExtraGames, {dropping, #{extra_games_this_week := Released}}) ->
+    max(0, ExtraGames - Released).
 
 make_room(TeamsHeld, MaxTeams, [Drop | LaterDrops]) when TeamsHeld >= MaxTeams ->
     {{dropping, Drop}, LaterDrops, TeamsHeld};

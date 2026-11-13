@@ -78,22 +78,22 @@ a_released_team_can_fill_its_next_bidder_too_test() ->
 
 drops_test_() ->
     AtTheMaximum = #{owners => #{sarah => owner(10000, 5)},
-                     drops => #{sarah => [drop_purdue]}},
+                     drops => #{sarah => [purdue()]}},
     TooDear = (bid(1, sarah, 20000))#{priority := 1},
     Affordable = (bid(2, sarah, 2000))#{priority := 2},
     [
         {"an owner at the maximum wins by the drop they queued",
-         ?_assertEqual([{won, notre_dame, Affordable, {dropping, drop_purdue}}],
+         ?_assertEqual([{won, notre_dame, Affordable, {dropping, purdue()}}],
                        resolve([lot(notre_dame, [Affordable])], AtTheMaximum))},
         {"one drop makes room for one win",
-         ?_assertMatch([{won, notre_dame, _, {dropping, drop_purdue}},
+         ?_assertMatch([{won, notre_dame, _, {dropping, #{team := purdue}}},
                         {void, oregon, _, over_the_maximum_with_no_drop}],
                        resolve([lot(notre_dame, [(bid(1, sarah, 2000))#{priority := 1}]),
                                 lot(oregon, [(bid(2, sarah, 2000))#{priority := 2}])],
                                AtTheMaximum))},
         {"a drop is spent only on a bid that wins; catches spending it on a void bid",
          ?_assertMatch([{void, oregon, TooDear, insufficient_funds},
-                        {won, notre_dame, Affordable, {dropping, drop_purdue}}],
+                        {won, notre_dame, Affordable, {dropping, #{team := purdue}}}],
                        resolve([lot(oregon, [TooDear]), lot(notre_dame, [Affordable])],
                                AtTheMaximum))}
     ].
@@ -130,8 +130,20 @@ the_battle_reserve_test_() ->
          ?_assertMatch([{void, notre_dame, Bid, {would_spend_into_the_reserve,
                                                  #{reserve_units := 2500}}}],
                        resolve([(lot(notre_dame, [Bid]))#{extra_games_this_week := 1}],
-                               #{owners => #{sarah => owner(3500, 3)}}))}
+                               #{owners => #{sarah => owner(3500, 3)}}))},
+        {"§11: a team released to make room takes its second game off the reserve; "
+         "catches counting the released team's games",
+         ?_assertMatch([{won, notre_dame, Bid, {dropping, #{team := purdue}}}],
+                       resolve([lot(notre_dame, [Bid])], playing_twice(4000)))},
+        {"and the reserve left is still one stake per game the roster plays",
+         ?_assertMatch([{void, notre_dame, Bid, {would_spend_into_the_reserve,
+                                                 #{reserve_units := 2500}}}],
+                       resolve([lot(notre_dame, [Bid])], playing_twice(3999)))}
     ].
+
+playing_twice(Funds) ->
+    #{owners => #{sarah => (owner(Funds, 5))#{extra_games_this_week := 1}},
+      drops => #{sarah => [(purdue())#{extra_games_this_week := 1}]}}.
 
 the_report_follows_the_lots_order_test() ->
     ?assertMatch([{won, clemson, _, _}, {skipped, oregon, _}, {won, notre_dame, _, _}],
@@ -165,6 +177,9 @@ lot(Team, Bids) ->
 bid(Id, Owner, Amount) ->
     #{bid => Id, owner => Owner, amount_units => Amount, queued_at => {utc, Id},
       priority => 1}.
+
+purdue() ->
+    #{team => purdue, extra_games_this_week => 0}.
 
 owner(Funds, TeamsHeld) ->
     #{funds_units => Funds, escrow_units => 0, teams_held => TeamsHeld,

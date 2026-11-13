@@ -144,6 +144,83 @@ differ. The Erlang must reproduce every case exactly; a disagreement is a bug in
 the other, and the rulebook decides which. A deliberate difference is translated in the
 golden test, never patched into the recording.
 
+`golden/season/` holds whole leagues: the PHP's own simulator (`setup/simulator.php`)
+playing seeded owners through its real handlers, recorded by `golden/season/record.php` as
+one step per line. A step is the setup, an owner's dashboard loading (which is when the
+PHP catches a league up), an owner's action with the PHP's answer, or the end of a week.
+Each carries the polls that landed and the ledger rows it wrote, and, when they change,
+the facts the replay harness controls rather than the app: the market openings scheduled
+and §8's two boundaries, as instants. The PHP's database ids are recorded as names
+(owners, teams) or as their order of creation within the league (Battles, trades,
+transactions, orders, playoff payouts, ledger entries), and times are the fixture's own,
+not the replay's shifted clock. Each week ends with the league caught up and a snapshot of
+funds, rosters, the House, each owner's Portfolio Value and Alpha as the PHP's
+`portfolio_summary()` reports them, and, once §12 has frozen it, the Prize Pool. The
+standings themselves are not compared: the PHP breaks a tie in Alpha by Portfolio Value and
+then by name, where this port ranks equal Alphas together, so a tie at the top is
+co-champions (Trevor's ruling). After the regular
+season the league is taken through the Playoff a round at a time: the day before each
+round, and once more after the National Championship, it catches up and the PHP's payout
+sync runs (a `payouts` step), then the owners act, the Commissioner tries to settle the
+season, and a snapshot closes the round. Every try is refused until the last, after the
+National Championship, which settles it; a second try then is refused as already settled.
+The 2022 and 2023 fixtures hold no bracket, so only 2024 and 2025 pay anything out or
+settle. Just before the National Championship (in 2022 and 2023, as the regular season
+ends), the owner holding most bids on the cheapest ranked House team and two owners offer
+each other a team in a trade nobody confirms. Both are still open when §6 closes the
+market, so after the Championship the trade can be neither confirmed nor cancelled, and the
+bid neither reordered nor, to any effect, cancelled. The 2022 and 2023 fixtures hold no
+postseason games, so their market never closes: the trade is confirmed and settles there,
+and the bid can still be reordered. Record after the league's 09:00 market open: a
+recording made earlier in the day strands one of the PHP replay's openings at today's
+09:00, and the orders queued into it never settle. The last line is the league's end
+state.
+
+The Commissioner's corrections (§3, §13) are played through the PHP's own handlers too. One
+week between the fourth and the eighth, after the Commissioner's desk catches the league up
+(a `dashboard` step), an owner's top-up is confirmed for ten times what was asked, reversed,
+and confirmed again as asked; another owner withdraws a request; a third is rejected; one
+owner's funds are adjusted, with a reason, by up to $30 either way; and the refusals are
+tried: a second open request, a second reversal, a zero adjustment, one without a reason,
+and one by an owner. A top-up requested in the Playoff's first round waits, blocking the
+settlement, until it is confirmed after the National Championship, when the owner holding
+least is charged past zero, so the settlement collects from someone. After the settling,
+the Commissioner tries to reverse the latest contribution and to adjust an owner, and an
+owner asks for a top-up: refused where the season settled, accepted in 2022 and 2023. The PHP's factory funds an owner
+with one ledger row but two contributions, the buy-in and a top-up for the rest, so the
+replay confirms the buy-in for the whole amount and counts the PHP's contribution numbers
+past those top-ups. `league_replay_tests` replays every trace through a league
+process, catching up exactly where the PHP did, and fails on the first step whose answer,
+ledger rows or snapshot differ.
+
+Recording needs the pp26dev repository at the commit above (`PP26DEV`, default
+`~/Projects/plassman-pickem`) and a MariaDB database holding its schema:
+
+```
+mariadb -e 'CREATE DATABASE pp26dev_sim'
+mariadb pp26dev_sim < "$PP26DEV/setup/schema.sql"
+DB_NAME=pp26dev_sim DB_USER=$USER php -d extension=pdo_mysql \
+    golden/season/record.php --year=2024 --seed=1 [--weeks=0]
+```
+
+`--weeks=0` records draft night alone. `--twice` has the owners act twice a week: at the
+opening, as the simulator does, and again after the weekend's games, before the next poll
+reprices the board, when most teams are off it and orders queue for the next opening.
+The simulator alone never queues an order that settles there, so the blind auction and
+the opening's other steps are tested only by `--twice` seasons.
+
+Every season runs in a transaction that is rolled back. A re-record reproduces a draft
+night exactly apart from its timestamps, which move by the seconds the run took; a whole
+season can differ by a decision or two that fall within seconds of a time boundary.
+
+The PHP reads games `ORDER BY kickoff_at` with no tie-break, and MariaDB now and then
+returns two games kicking off together out of schedule order, so their Battles are created
+and bound the other way round. The port takes schedule order. A recording in which that
+happened is not written: `record.php` exits 1 naming the games, and the season is recorded
+again. The season settlement pays owners `ORDER BY available_funds_cents DESC`, likewise
+with no tie-break; the port pays equal balances in the order the owners joined, and a
+recording that did otherwise is refused the same way.
+
 ## Testing
 
 - **Break the code to check the test.** A test proves nothing until it has failed for the

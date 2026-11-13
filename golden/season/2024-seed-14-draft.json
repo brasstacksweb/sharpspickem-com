@@ -1,0 +1,114 @@
+{"pp26dev":"b13448405413f1f16ae0f88676d47bbb5fc851ff","year":2024,"seed":14}
+{"event":"league","settings":{"additional_contributions_enabled":"1","battle_house_pct":"20","battle_stake_cents":"700","buyback_closes_on":"2027-02-23","buyback_narrows_on":"2027-01-27","chat_url":"","commissioner_payment_identifier":"","current_poll":"AP","current_week":"1","discoverable":"0","initial_contribution_cents":"10000","market_open_time":"09:00","max_teams":"5","payment_instructions":"Send your contribution directly to the Commissioner (Venmo/Zelle/cash). Include your name and the league name in the note. Your Available Funds are updated after the Commissioner confirms receipt.","timezone":"America/New_York"},"owners":[{"owner":"The Commissioner","funds":5892},{"owner":"Jason","funds":5892},{"owner":"Trevor","funds":5892},{"owner":"Spencer","funds":5892},{"owner":"Dana","funds":5892},{"owner":"Marcus","funds":5892},{"owner":"Priya","funds":5892},{"owner":"Wes","funds":5892}],"at":1724342400}
+{"event":"setup","at":1724342400,"polls":[{"week":1,"poll":"AP"}],"ledger":[{"book":"owner","entry":1,"owner":"The Commissioner","type":"contribution","amount":5892,"balance_after":5892,"related":null,"reversal_of":null},{"book":"owner","entry":2,"owner":"Jason","type":"contribution","amount":5892,"balance_after":5892,"related":null,"reversal_of":null},{"book":"owner","entry":3,"owner":"Trevor","type":"contribution","amount":5892,"balance_after":5892,"related":null,"reversal_of":null},{"book":"owner","entry":4,"owner":"Spencer","type":"contribution","amount":5892,"balance_after":5892,"related":null,"reversal_of":null},{"book":"owner","entry":5,"owner":"Dana","type":"contribution","amount":5892,"balance_after":5892,"related":null,"reversal_of":null},{"book":"owner","entry":6,"owner":"Marcus","type":"contribution","amount":5892,"balance_after":5892,"related":null,"reversal_of":null},{"book":"owner","entry":7,"owner":"Priya","type":"contribution","amount":5892,"balance_after":5892,"related":null,"reversal_of":null},{"book":"owner","entry":8,"owner":"Wes","type":"contribution","amount":5892,"balance_after":5892,"related":null,"reversal_of":null}],"openings":[],"boundaries":{"narrows_at":1730786489,"closes_at":1733119289}}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"The Commissioner","action":"create_draft","in":[],"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"The Commissioner","action":"set_draft_order","in":{"owner_ids":["The Commissioner","Jason","Wes","Dana","Trevor","Spencer","Priya","Marcus"]},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"The Commissioner","action":"start_draft","in":[],"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"The Commissioner","action":"draft_select","in":{"team_id":"Texas Tech"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Jason","action":"draft_select","in":{"team_id":"Iowa"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":9,"owner":"Jason","type":"draft_purchase","amount":-200,"balance_after":5692,"related":["team","Iowa"],"reversal_of":null},{"book":"house","entry":1,"owner":"Jason","type":"draft","amount":200,"balance_after":200,"related":["transaction",2],"reversal_of":null}]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Wes","action":"draft_select","in":{"team_id":"Oklahoma"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":10,"owner":"Wes","type":"draft_purchase","amount":-1100,"balance_after":4792,"related":["team","Oklahoma"],"reversal_of":null},{"book":"house","entry":2,"owner":"Wes","type":"draft","amount":1100,"balance_after":1300,"related":["transaction",3],"reversal_of":null}]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Dana","action":"draft_select","in":{"team_id":"Georgia"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":11,"owner":"Dana","type":"draft_purchase","amount":-2600,"balance_after":3292,"related":["team","Georgia"],"reversal_of":null},{"book":"house","entry":3,"owner":"Dana","type":"draft","amount":2600,"balance_after":3900,"related":["transaction",4],"reversal_of":null}]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Trevor","action":"draft_select","in":{"team_id":"Boise State"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Spencer","action":"draft_select","in":{"team_id":null},"status":400,"error":"Team not found","polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Spencer","action":"draft_select","in":{"team_id":"Liberty"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Priya","action":"draft_select","in":{"team_id":"Oregon"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":12,"owner":"Priya","type":"draft_purchase","amount":-2400,"balance_after":3492,"related":["team","Oregon"],"reversal_of":null},{"book":"house","entry":4,"owner":"Priya","type":"draft","amount":2400,"balance_after":6300,"related":["transaction",7],"reversal_of":null}]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Marcus","action":"draft_select","in":{"team_id":"Wake Forest"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Marcus","action":"draft_select","in":{"team_id":"Missouri"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":13,"owner":"Marcus","type":"draft_purchase","amount":-1600,"balance_after":4292,"related":["team","Missouri"],"reversal_of":null},{"book":"house","entry":5,"owner":"Marcus","type":"draft","amount":1600,"balance_after":7900,"related":["transaction",9],"reversal_of":null}]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Priya","action":"draft_select","in":{"team_id":"Georgia State"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Spencer","action":"draft_select","in":{"team_id":"LSU"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":14,"owner":"Spencer","type":"draft_purchase","amount":-1400,"balance_after":4492,"related":["team","LSU"],"reversal_of":null},{"book":"house","entry":6,"owner":"Spencer","type":"draft","amount":1400,"balance_after":9300,"related":["transaction",11],"reversal_of":null}]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Trevor","action":"draft_select","in":{"team_id":"Oklahoma State"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":15,"owner":"Trevor","type":"draft_purchase","amount":-1000,"balance_after":4892,"related":["team","Oklahoma State"],"reversal_of":null},{"book":"house","entry":7,"owner":"Trevor","type":"draft","amount":1000,"balance_after":10300,"related":["transaction",12],"reversal_of":null}]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Dana","action":"draft_select","in":{"team_id":"Colorado State"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Wes","action":"draft_select","in":{"team_id":"James Madison"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Jason","action":"draft_select","in":{"team_id":"Boston College"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"The Commissioner","action":"draft_select","in":{"team_id":"Clemson"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":16,"owner":"The Commissioner","type":"draft_purchase","amount":-1300,"balance_after":4592,"related":["team","Clemson"],"reversal_of":null},{"book":"house","entry":8,"owner":"The Commissioner","type":"draft","amount":1300,"balance_after":11600,"related":["transaction",16],"reversal_of":null}]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"The Commissioner","action":"draft_select","in":{"team_id":"Arizona State"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Jason","action":"draft_select","in":{"team_id":"Kansas State"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":17,"owner":"Jason","type":"draft_purchase","amount":-900,"balance_after":4792,"related":["team","Kansas State"],"reversal_of":null},{"book":"house","entry":9,"owner":"Jason","type":"draft","amount":900,"balance_after":12500,"related":["transaction",18],"reversal_of":null}]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Wes","action":"draft_select","in":{"team_id":"BYU"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Dana","action":"draft_select","in":{"team_id":"Florida International"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Trevor","action":"draft_select","in":{"team_id":"Indiana"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Spencer","action":"draft_select","in":{"team_id":"Louisiana"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Priya","action":"draft_select","in":{"team_id":"Central Michigan"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Marcus","action":"draft_select","in":{"team_id":"San Diego State"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Marcus","action":"draft_select","in":{"team_id":"Duke"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Priya","action":"draft_select","in":{"team_id":"Houston"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Spencer","action":"draft_select","in":{"team_id":"Kentucky"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Trevor","action":"draft_select","in":{"team_id":"Army"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Dana","action":"draft_select","in":{"team_id":null},"status":400,"error":"Team not found","polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Dana","action":"draft_select","in":{"team_id":"Coastal Carolina"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Wes","action":"draft_select","in":{"team_id":"Iowa State"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Jason","action":"draft_select","in":{"team_id":"Miami (OH)"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"The Commissioner","action":"draft_select","in":{"team_id":"East Carolina"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"The Commissioner","action":"draft_select","in":{"team_id":"Florida"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Jason","action":"draft_select","in":{"team_id":"Kent State"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Wes","action":"draft_select","in":{"team_id":"Colorado"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Dana","action":"draft_select","in":{"team_id":"South Florida"},"status":400,"error":"$0.00 for South Florida would leave you short: you have $32.92, and $35.00 has to stay back to cover Battle stakes for 5 teams.","polls":[],"ledger":[]}
+{"event":"clock","at":1724342400,"polls":[],"ledger":[]}
+{"event":"action","at":1724342400,"owner":"Dana","action":"draft_select","in":{"team_id":"Vanderbilt"},"status":400,"error":"$0.00 for Vanderbilt would leave you short: you have $32.92, and $35.00 has to stay back to cover Battle stakes for 5 teams.","polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Dana","action":"draft_select","in":{"team_id":"Tennessee"},"status":400,"error":"$12.00 for Tennessee would leave you short: you have $32.92, and $35.00 has to stay back to cover Battle stakes for 5 teams.","polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Dana","action":"draft_pass","in":[],"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Trevor","action":"draft_select","in":{"team_id":null},"status":400,"error":"Team not found","polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Trevor","action":"draft_select","in":{"team_id":null},"status":400,"error":"Team not found","polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Trevor","action":"draft_select","in":{"team_id":"Maryland"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Spencer","action":"draft_select","in":{"team_id":"Bowling Green"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Priya","action":"draft_select","in":{"team_id":"Hawai'i"},"status":400,"error":"$0.00 for Hawai'i would leave you short: you have $34.92, and $35.00 has to stay back to cover Battle stakes for 5 teams.","polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"The Commissioner","action":"undo_pick","in":[],"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Spencer","action":"draft_select","in":{"team_id":"Ohio State"},"status":400,"error":"$25.00 for Ohio State would leave you short: you have $44.92, and $35.00 has to stay back to cover Battle stakes for 5 teams.","polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Spencer","action":"draft_select","in":{"team_id":"Arizona"},"status":200,"error":null,"polls":[],"ledger":[{"book":"owner","entry":18,"owner":"Spencer","type":"draft_purchase","amount":-600,"balance_after":3892,"related":["team","Arizona"],"reversal_of":null},{"book":"house","entry":10,"owner":"Spencer","type":"draft","amount":600,"balance_after":13100,"related":["transaction",38],"reversal_of":null}]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Priya","action":"draft_select","in":{"team_id":"Ohio State"},"status":400,"error":"$25.00 for Ohio State would leave you short: you have $34.92, and $35.00 has to stay back to cover Battle stakes for 5 teams.","polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Priya","action":"draft_pass","in":[],"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"clock","at":1724342401,"polls":[],"ledger":[]}
+{"event":"action","at":1724342401,"owner":"Marcus","action":"draft_select","in":{"team_id":"Akron"},"status":200,"error":null,"polls":[],"ledger":[]}
+{"event":"end","at":1724342401,"funds":{"The Commissioner":4592,"Jason":4792,"Trevor":4892,"Spencer":3892,"Dana":3292,"Marcus":4292,"Priya":3492,"Wes":4792},"standings":{"The Commissioner":{"portfolio":5892,"alpha":0},"Jason":{"portfolio":5892,"alpha":0},"Trevor":{"portfolio":5892,"alpha":0},"Spencer":{"portfolio":5892,"alpha":0},"Dana":{"portfolio":5892,"alpha":0},"Marcus":{"portfolio":5892,"alpha":0},"Priya":{"portfolio":5892,"alpha":0},"Wes":{"portfolio":5892,"alpha":0}},"teams":[{"team":"Akron","owner":"Marcus","basis":0},{"team":"Arizona","owner":"Spencer","basis":600},{"team":"Arizona State","owner":"The Commissioner","basis":0},{"team":"Army","owner":"Trevor","basis":0},{"team":"Boise State","owner":"Trevor","basis":0},{"team":"Boston College","owner":"Jason","basis":0},{"team":"BYU","owner":"Wes","basis":0},{"team":"Central Michigan","owner":"Priya","basis":0},{"team":"Clemson","owner":"The Commissioner","basis":1300},{"team":"Coastal Carolina","owner":"Dana","basis":0},{"team":"Colorado","owner":"Wes","basis":0},{"team":"Colorado State","owner":"Dana","basis":0},{"team":"Duke","owner":"Marcus","basis":0},{"team":"East Carolina","owner":"The Commissioner","basis":0},{"team":"Florida","owner":"The Commissioner","basis":0},{"team":"Florida International","owner":"Dana","basis":0},{"team":"Georgia","owner":"Dana","basis":2600},{"team":"Georgia State","owner":"Priya","basis":0},{"team":"Houston","owner":"Priya","basis":0},{"team":"Indiana","owner":"Trevor","basis":0},{"team":"Iowa","owner":"Jason","basis":200},{"team":"Iowa State","owner":"Wes","basis":0},{"team":"James Madison","owner":"Wes","basis":0},{"team":"Kansas State","owner":"Jason","basis":900},{"team":"Kent State","owner":"Jason","basis":0},{"team":"Kentucky","owner":"Spencer","basis":0},{"team":"Liberty","owner":"Spencer","basis":0},{"team":"Louisiana","owner":"Spencer","basis":0},{"team":"LSU","owner":"Spencer","basis":1400},{"team":"Maryland","owner":"Trevor","basis":0},{"team":"Miami (OH)","owner":"Jason","basis":0},{"team":"Missouri","owner":"Marcus","basis":1600},{"team":"Oklahoma","owner":"Wes","basis":1100},{"team":"Oklahoma State","owner":"Trevor","basis":1000},{"team":"Oregon","owner":"Priya","basis":2400},{"team":"San Diego State","owner":"Marcus","basis":0},{"team":"Texas Tech","owner":"The Commissioner","basis":0},{"team":"Wake Forest","owner":"Marcus","basis":0}],"house":13100,"prize_pool":null,"draft":"complete","polls":[],"ledger":[]}
